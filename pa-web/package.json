@@ -1,5 +1,5 @@
 {
-  "name": "pa-static-site",
+  "name": "pa-web",
   "dependencies": {
     "ol": "7.4.0"
   },

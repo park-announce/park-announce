@@ -36,3 +36,5 @@ TODOs.md
 
 # Go workspace file
 go.work
+#ignore postgres volume (dbdata folder)
+dbdata/

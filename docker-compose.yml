@@ -2,24 +2,28 @@ version: '3'
 
 services:
   api:
-    build:
-      context: ./pa-api
+    container_name: api
+    image: park-announce/pa-api
     ports:
       - 8000:8000
     depends_on:
       - db
 
   web:
-    build:
-      context: ./pa-static-site
+    container_name: web
+    image: park-announce/pa-web
     ports:
       - 5173:5173
     depends_on:
       - api
 
   db:
-    image: postgres:13
+    container_name: db
+    image: postgres:11
+    ports:
+      - '5432:5432'
+    volumes:
+      - './dbdata:/var/lib/postgresql/data'
     environment:
       - POSTGRES_USER=park-announce
       - POSTGRES_PASSWORD=PosgresDb1591*
-      - POSTGRES_DB=PaDB

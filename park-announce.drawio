@@ -1,0 +1,117 @@
+<mxfile host="app.diagrams.net" modified="2023-07-16T22:05:29.562Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" etag="4k6DBMN5vZwkuROvvoX3" version="21.6.2" type="device">
+  <diagram name="general-architecture" id="9vhqpyFuX7fWmY95_DqZ">
+    <mxGraphModel dx="1434" dy="811" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ABSqOJxs4L8R-0d9x668-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" target="ABSqOJxs4L8R-0d9x668-2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="100" as="sourcePoint" />
+            <mxPoint x="345" y="125" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="345" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-4" value="socket connection (1)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ABSqOJxs4L8R-0d9x668-3">
+          <mxGeometry x="0.1" y="-4" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-1" value="client" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="130" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ABSqOJxs4L8R-0d9x668-2" target="ABSqOJxs4L8R-0d9x668-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="625" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-8" value="get park announce(2)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ABSqOJxs4L8R-0d9x668-6">
+          <mxGeometry x="-0.25" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.006;entryY=0.597;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="ABSqOJxs4L8R-0d9x668-2" target="ABSqOJxs4L8R-0d9x668-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400" y="312" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-21" value="read from result from kafka(6)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ABSqOJxs4L8R-0d9x668-20">
+          <mxGeometry x="0.3791" relative="1" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1.015;entryY=0.565;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="ABSqOJxs4L8R-0d9x668-2" target="ABSqOJxs4L8R-0d9x668-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="153" />
+              <mxPoint x="300" y="153" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-23" value="send result to client (7)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ABSqOJxs4L8R-0d9x668-22">
+          <mxGeometry x="-0.0384" y="3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-2" value="api" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="345" y="80" width="110" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-5" value="kafka" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="540" y="210" width="170" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.694;exitY=-0.017;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="ABSqOJxs4L8R-0d9x668-7">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="663" y="450" as="sourcePoint" />
+            <mxPoint x="670" y="390" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="670" y="557" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-15" value="read from kafka(3)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ABSqOJxs4L8R-0d9x668-9">
+          <mxGeometry x="0.16" y="-3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ABSqOJxs4L8R-0d9x668-7" target="ABSqOJxs4L8R-0d9x668-10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="630" />
+              <mxPoint x="640" y="630" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-12" value="query from db (4)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ABSqOJxs4L8R-0d9x668-11">
+          <mxGeometry x="-0.1714" y="3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ABSqOJxs4L8R-0d9x668-7">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="580" y="390" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="580" y="476" />
+              <mxPoint x="581" y="476" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-17" value="write result to kafka(5)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ABSqOJxs4L8R-0d9x668-16">
+          <mxGeometry x="-0.14" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-7" value="park-announce service 1" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="550" y="560" width="180" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="ABSqOJxs4L8R-0d9x668-10" value="DB" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="565" y="880" width="150" height="120" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
