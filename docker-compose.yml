@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: ./pa-api
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+
+  web:
+    build:
+      context: ./pa-static-site
+    ports:
+      - 5173:5173
+    depends_on:
+      - api
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=park-announce
+      - POSTGRES_PASSWORD=PosgresDb1591*
+      - POSTGRES_DB=PaDB
