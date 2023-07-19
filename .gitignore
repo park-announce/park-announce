@@ -38,3 +38,4 @@ TODOs.md
 go.work
 #ignore postgres volume (dbdata folder)
 dbdata/
+pgadmin-data/

@@ -19,7 +19,7 @@ services:
 
   db:
     container_name: db
-    image: postgres:11
+    image: park-announce/pa-db
     ports:
       - '5432:5432'
     volumes:
@@ -27,3 +27,14 @@ services:
     environment:
       - POSTGRES_USER=park-announce
       - POSTGRES_PASSWORD=PosgresDb1591*
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    restart: always
+    volumes:
+      - './pgadmin-data:/var/lib/pgadmin'
+    ports:
+     - '5050:80'
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin

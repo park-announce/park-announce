@@ -1,10 +1,4 @@
 
-docker build -t park-announce/pa-api pa-api
-docker build -t park-announce/pa-web pa-web
-docker build -t park-announce/pa-db pa-db
-
-docker-compose up -d
-
 #creare database and table in postgres. insert sample record to postgres table
 docker exec -it db psql -U park-announce -c "create database padb;"
 docker exec -it db psql -U park-announce padb -c "CREATE TABLE users (id SERIAL PRIMARY KEY, phone VARCHAR(20), nickname VARCHAR(50), name VARCHAR(50), surname VARCHAR(50), email VARCHAR(100));"
