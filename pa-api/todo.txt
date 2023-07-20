@@ -1,0 +1,28 @@
+api katmani n instance calisacak.
+uzerinde socket connectionlari tutacak
+her api instance ayaga kalkarken redisden ya da zookeperdan 0 dan baslayarak kendisine bos bir id almaya calisacak. ve belirli periyotlar ile redise hearthbeat mesaji gonderecek ve ayakta oldugunu soyleyecek.
+
+clienttan gonderilen istekler kafkada client_request isimli topic'e yazilacak. bu topice yazilan mesaj iceiriginde istegin geldigi apinin id bilgisidi de yer alacak.
+
+{
+    "api_id":0,
+    "client_id":"asasasasasasasas"
+}
+
+client_request isimli topicteki mesajlari consumer service okuyacak ve veri tabanindan uygun lokasyonlari bulacak. elde ettigi sonuclari kafkada client_response_x
+formatindaki topice yazacak . buradaki x degeri consumer_request topicinden okunan mesaj icerisindeki api_id alanindaki deger olmalidir.
+
+client_response_0
+client_response_1
+client_response_2
+client_response_3
+
+api intanceda kendi idsine ait mesajlari client_response_x formatindaki topicten dinlecek.
+
+herhangi bir api instance crash oldugunda uzerinde socket baglantilari kapanir ve client otomatik olarak belirli bir algoritma ile (onerror metotdunda) tekrar baglanti acmaya calisacaktir.
+client tekrar baglanti actiginda, acilan yeni baglanti bir onceki baglanti actigi api olmayabilecegi icin,
+bir onceki istegi ile ilgili cevap kendisine ulasmayacaktir. bunun icin client_response_x formatindaki topicten consume edilen mesaj icerisindeki client_id degeri o intance uzerinde bulunmuyorsa
+bu mesaj client_response_braodcast isimli topice yazilacaktir. bu topic butun intancelar tarafindan (consumer group tanimi yapilmadan, yani ayni mesajin butun clientlara gidecegi sekilde)
+consume edilecektir. boylece client baska bir api ye baglandiysa ve hala baglanti aciksa, mesaj clienta ulasacaktir.
+
+her api kendine baglanti acan socket client objelerini key degeri clientid olacak sekilde bir map ya da dictionary de tutacaktir.

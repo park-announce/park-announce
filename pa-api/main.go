@@ -5,10 +5,19 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
+	"strconv"
+
+	"math"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
+
+type Location struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
 
 // User struct represents the user model
 type User struct {
@@ -48,6 +57,8 @@ func main() {
 	router.HandleFunc("/users/{id}", getUser).Methods("GET")
 	router.HandleFunc("/users/{id}", updateUser).Methods("PUT")
 	router.HandleFunc("/users/{id}", deleteUser).Methods("DELETE")
+
+	router.HandleFunc("/locations/nearby", getNearByLocations).Methods("GET")
 
 	// Start the server
 	log.Println("Server started on port 8000")
@@ -125,4 +136,81 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// getNearByLocations retrieves nearest locations
+func getNearByLocations(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	latitude, _ := strconv.ParseFloat(params["latitude"], 64)
+	longitude, _ := strconv.ParseFloat(params["longitude"], 64)
+	//distance, _ := strconv.ParseFloat(params["distance"], 64)
+
+	locations := []Location{
+		{Latitude: 37.7749, Longitude: -122.4194}, // San Francisco, CA
+		{Latitude: 40.7128, Longitude: -74.0060},  // New York, NY
+		{Latitude: 34.0522, Longitude: -118.2437}, // Los Angeles, CA
+		// Add more locations as needed
+	}
+
+	n := 2
+	nearestLocations := findNearestLocations(locations, latitude, longitude, n)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(nearestLocations)
+}
+
+const earthRadius = 6371 // Earth's radius in kilometers
+
+func haversine(lat1, lon1, lat2, lon2 float64) float64 {
+	// Convert latitude and longitude from degrees to radians
+	lat1Rad := lat1 * math.Pi / 180
+	lon1Rad := lon1 * math.Pi / 180
+	lat2Rad := lat2 * math.Pi / 180
+	lon2Rad := lon2 * math.Pi / 180
+
+	// Calculate differences in latitude and longitude
+	dLat := lat2Rad - lat1Rad
+	dLon := lon2Rad - lon1Rad
+
+	// Calculate the central angle using the Haversine formula
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1Rad)*math.Cos(lat2Rad)*
+			math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	// Calculate the distance using the Earth's radius
+	distance := earthRadius * c
+	return distance
+}
+
+func findNearestLocations(locations []Location, refLat, refLon float64, n int) []Location {
+	// Create a slice to store distances and their corresponding indices
+	type DistanceIndex struct {
+		distance float64
+		index    int
+	}
+	distances := make([]DistanceIndex, len(locations))
+
+	// Calculate distances and store them with their indices
+	for i, loc := range locations {
+		distances[i] = DistanceIndex{
+			distance: haversine(refLat, refLon, loc.Latitude, loc.Longitude),
+			index:    i,
+		}
+	}
+
+	// Sort the distances in ascending order
+	sort.Slice(distances, func(i, j int) bool {
+		return distances[i].distance < distances[j].distance
+	})
+
+	// Create a slice to store the n nearest locations
+	nearestLocations := make([]Location, n)
+
+	// Extract the n nearest locations from the sorted distances
+	for i := 0; i < n; i++ {
+		nearestLocations[i] = locations[distances[i].index]
+	}
+
+	return nearestLocations
 }
