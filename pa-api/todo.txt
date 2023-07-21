@@ -1,6 +1,13 @@
+
+--API
+
 api katmani n instance calisacak.
 uzerinde socket connectionlari tutacak
-her api instance ayaga kalkarken redisden ya da zookeperdan 0 dan baslayarak kendisine bos bir id almaya calisacak. ve belirli periyotlar ile redise hearthbeat mesaji gonderecek ve ayakta oldugunu soyleyecek.
+her api instance ayaga kalkarken redisden ya da zookeperdan 0 dan baslayarak kendisine bos bir id almaya calisacak. 
+ve belirli periyotlar ile redise hearthbeat mesaji gonderecek ve ayakta oldugunu soyleyecek.
+api herhangi bir nedenle crash ya da down oldugunda calistigi platform tarafindan otomatik olarak ayaga kaldirilacak.
+api gracefully shutdown oldugunda, redisten elde ettigi id degerini bosa cikarmalidir.
+redisteki bu deger bosa cikarilmazsa, yeni ayaga kalkacak api en sondaki bos yeri arayacaktir. (arada bos id yer almayacaktir.)
 
 clienttan gonderilen istekler kafkada client_request isimli topic'e yazilacak. bu topice yazilan mesaj iceiriginde istegin geldigi apinin id bilgisidi de yer alacak.
 
@@ -26,3 +33,11 @@ bu mesaj client_response_braodcast isimli topice yazilacaktir. bu topic butun in
 consume edilecektir. boylece client baska bir api ye baglandiysa ve hala baglanti aciksa, mesaj clienta ulasacaktir.
 
 her api kendine baglanti acan socket client objelerini key degeri clientid olacak sekilde bir map ya da dictionary de tutacaktir.
+
+--CLIENT
+client web socket baglantisi acacaktir.
+baglanti herhangi bir nedenle koptugunda otomatik olarak tekrar acilacaktir. ancak otomatik olarak tekrar baglanti acma isterkleri arasindaki sure exponansiyel olarak artacaktir.
+uygulamada yer arama aktif oldugu surece, belirli periyotlarda kullanicinin guncel konumu uzerinden en yakin uygun park yerleri listelenmesi icin socket mesaji gonderilecektir.
+belirli bir konuma alinmak istendiginde google map uygulamasi acilacak.
+
+
