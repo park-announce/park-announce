@@ -44,3 +44,5 @@ services:
     restart: unless-stopped
     ports:
       - '6379:6379/tcp'
+    volumes:
+      - ./redis-data:/data

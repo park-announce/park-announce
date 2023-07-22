@@ -6,17 +6,22 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"sort"
 	"strconv"
+	"sync"
+	"syscall"
 
 	"math"
 
+	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
-	goredislib "github.com/redis/go-redis/v9"
+	"github.com/google/uuid"
+
+	"github.com/gorilla/websocket"
 )
 
 type Location struct {
@@ -42,75 +47,227 @@ type Geolocation struct {
 	Longitude float64 `json:"longitude"`
 }
 
+type SocketMessage struct {
+	ClientId    string      `json:"client_id"`
+	MessageType string      `json:"message_type"`
+	Data        interface{} `json:"data"`
+}
+
+type SendSocketMessage struct {
+	ClientId string `json:"client_id"`
+	Message  string `json:"message"`
+}
+
 var db *sql.DB
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+var connections map[string]*websocket.Conn = make(map[string]*websocket.Conn)
 
 func main() {
 
-	// Create a pool with go-redis (or redigo) which is the pool redisync will
-	// use while communicating with Redis. This can also be any pool that
-	// implements the `redis.Pool` interface.
-	client := goredislib.NewClient(&goredislib.Options{
-		Addr: "redis:6379",
-	})
-	pool := goredis.NewPool(client) // or, pool := redigo.NewPool(...)
+	httpServerQuit := make(chan os.Signal, 1)
+	signal.Notify(httpServerQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
-	// Create an instance of redisync to be used to obtain a mutual exclusion
-	// lock.
-	rs := redsync.New(pool)
+	redisLockQuit := make(chan os.Signal, 1)
+	signal.Notify(redisLockQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
-	// Obtain a new mutex by using the same name for all instances wanting the
-	// same lock.
+	postgresQuit := make(chan os.Signal, 1)
+	signal.Notify(postgresQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
-	instanceId := 0
+	wgMain := &sync.WaitGroup{}
+	wgMain.Add(3)
+
+	redisLockObtained := make(chan bool)
+
+	go func(_wgMain *sync.WaitGroup) {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in redis go rouitine", r)
+			}
+		}()
+		defer func() {
+			_wgMain.Done()
+		}()
+		rdb := redis.NewClient(&redis.Options{
+			Addr:     "redis:6379",
+			Password: "", // no password set
+			DB:       0,  // use default DB
+		})
+
+		instanceId := 0
+		var lockName string
+
+		lockValue := uuid.NewString()
+
+		for {
+
+			lockName = fmt.Sprintf("global-api-instance-id-%d", instanceId)
+
+			set, setErr := rdb.SetNX(lockName, lockValue, 0).Result()
+
+			if setErr != nil {
+				log.Fatal(setErr)
+				instanceId++
+				continue
+			}
+			if !set {
+				log.Println("value could not be set")
+				instanceId++
+				continue
+			}
+
+			break
+		}
+
+		log.Printf("instanceId : %d, lockValue : %s", instanceId, lockValue)
+		redisLockObtained <- true
+		<-redisLockQuit
+
+		log.Println("interrupt detect in redis go rouitine")
+		lockValueFromRedis, getErr := rdb.Get(lockName).Result()
+
+		log.Printf("lockName : %s, lockValue : %s, lockValueFromRedis : %s", lockName, lockValue, lockValueFromRedis)
+
+		if getErr != nil {
+			log.Fatal(getErr)
+		}
+
+		if lockValueFromRedis == lockValue {
+			deleteResult, delErr := rdb.Del(lockName).Result()
+
+			if delErr != nil {
+				log.Fatal(delErr)
+			}
+			if deleteResult > 0 {
+				log.Printf("redis key delete result. key : %s, value : %s, result : %d", lockName, lockValue, deleteResult)
+			}
+
+		}
+
+	}(wgMain)
+
+	<-redisLockObtained
+
+	go func(_wgMain *sync.WaitGroup) {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in postgres goroutine", r)
+			}
+		}()
+		defer func() {
+			_wgMain.Done()
+		}()
+		// Establish database connection
+		connStr := "postgres://park-announce:PosgresDb1591*@db/padb?sslmode=disable"
+		var err error
+		db, err = sql.Open("postgres", connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		<-postgresQuit
+
+		log.Println("interrupt detect in postgres go rouitine")
+
+	}(wgMain)
+
+	go func(_wgMain *sync.WaitGroup) {
+		defer func() {
+			_wgMain.Done()
+		}()
+
+		go func() {
+
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Println("Recovered in http go routine", r)
+				}
+			}()
+			// Initialize router
+			router := mux.NewRouter()
+
+			// Define API endpoints
+			router.HandleFunc("/users", createUser).Methods("POST")
+			router.HandleFunc("/users/{id}", getUser).Methods("GET")
+			router.HandleFunc("/users/{id}", updateUser).Methods("PUT")
+			router.HandleFunc("/users/{id}", deleteUser).Methods("DELETE")
+
+			router.HandleFunc("/locations/nearby", getNearByLocations).Methods("GET")
+
+			router.HandleFunc("/socket/connect", connectSocket)
+			router.HandleFunc("/socket/messages", sendSampleMessage)
+
+			log.Println("Server started on port 8000")
+			log.Fatal(http.ListenAndServe(":8000", router))
+		}()
+
+		<-httpServerQuit
+		log.Println("interrupt detect in http go rouitine")
+
+	}(wgMain)
+
+	wgMain.Wait()
+}
+
+func sendSampleMessage(w http.ResponseWriter, r *http.Request) {
+
+	var sendSocketMessage SendSocketMessage
+	json.NewDecoder(r.Body).Decode(&sendSocketMessage)
+
+	conn := connections[sendSocketMessage.ClientId]
+
+	// Write message back to browser
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(sendSocketMessage.Message)); err != nil {
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode("OK")
+}
+
+func connectSocket(w http.ResponseWriter, r *http.Request) {
+	conn, connErr := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
+
+	if connErr != nil {
+		log.Println(connErr)
+	}
 
 	for {
-		mutexname := fmt.Sprintf("global-api-instance-id-%d", instanceId)
-		mutex := rs.NewMutex(mutexname)
+		// Read message from browser
+		msgType, msg, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
 
-		// Obtain a lock for our given mutex. After this is successful, no one else
-		// can obtain the same lock (the same mutex name) until we unlock it.
-		if err := mutex.Lock(); err != nil {
-			instanceId++
+		// Print the message to the console
+		fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+
+		var socketMessage SocketMessage
+		deSerializationError := json.Unmarshal(msg, &socketMessage)
+		if deSerializationError != nil {
+			log.Println(deSerializationError)
 			continue
 		}
 
-		break
-	}
+		//validate ClientId
 
-	log.Printf("instanceId : %d", instanceId)
-
-	// Do your work that requires the lock.
-
-	// Release the lock so other processes or threads can obtain a lock.
-	/*
-		if ok, err := mutex.Unlock(); !ok || err != nil {
-			panic("unlock failed")
+		if socketMessage.ClientId == "" {
+			log.Println("invalid client id")
+			return
 		}
-	*/
 
-	// Establish database connection
-	connStr := "postgres://park-announce:PosgresDb1591*@db/padb?sslmode=disable"
-	var err error
-	db, err = sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
+		connections[socketMessage.ClientId] = conn
+
+		// Write message back to browser
+		if err = conn.WriteMessage(msgType, msg); err != nil {
+			return
+		}
 	}
-	defer db.Close()
-
-	// Initialize router
-	router := mux.NewRouter()
-
-	// Define API endpoints
-	router.HandleFunc("/users", createUser).Methods("POST")
-	router.HandleFunc("/users/{id}", getUser).Methods("GET")
-	router.HandleFunc("/users/{id}", updateUser).Methods("PUT")
-	router.HandleFunc("/users/{id}", deleteUser).Methods("DELETE")
-
-	router.HandleFunc("/locations/nearby", getNearByLocations).Methods("GET")
-
-	// Start the server
-	log.Println("Server started on port 8000")
-	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
 // createUser creates a new user

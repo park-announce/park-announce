@@ -41,3 +41,16 @@ uygulamada yer arama aktif oldugu surece, belirli periyotlarda kullanicinin gunc
 belirli bir konuma alinmak istendiginde google map uygulamasi acilacak.
 
 
+var socket = new WebSocket("ws://localhost:8000/socket/connect");
+
+socket.onopen = function () {
+    console.log("connected")
+};
+
+socket.onmessage = function (e) {
+    console.log(e.data);
+};
+
+socket.send('{"client_id":"1234","message_type":"connection","data":{"name":"resul"}}');
+
+curl -kv -d '{"client_id":"1234","message":"test message"}' http://localhost:8000/socket/messages
