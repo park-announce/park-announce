@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -12,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"time"
 
 	"math"
 
@@ -29,24 +29,6 @@ type Location struct {
 	Longitude float64 `json:"longitude"`
 }
 
-// User struct represents the user model
-type User struct {
-	ID       int    `json:"id"`
-	Phone    string `json:"phone"`
-	Nickname string `json:"nickname"`
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Email    string `json:"email"`
-}
-
-// Geolocation struct represents the geolocation model
-type Geolocation struct {
-	ID        int     `json:"id"`
-	UserID    int     `json:"user_id"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-}
-
 type SocketMessage struct {
 	ClientId    string      `json:"client_id"`
 	MessageType string      `json:"message_type"`
@@ -58,8 +40,6 @@ type SendSocketMessage struct {
 	Message  string `json:"message"`
 }
 
-var db *sql.DB
-
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -70,18 +50,28 @@ var connections map[string]*websocket.Conn = make(map[string]*websocket.Conn)
 func main() {
 
 	httpServerQuit := make(chan os.Signal, 1)
-	signal.Notify(httpServerQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	signal.Notify(httpServerQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
 
 	redisLockQuit := make(chan os.Signal, 1)
-	signal.Notify(redisLockQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	signal.Notify(redisLockQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
 
-	postgresQuit := make(chan os.Signal, 1)
-	signal.Notify(postgresQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	redisHeartBeatQuit := make(chan os.Signal, 1)
+	signal.Notify(redisHeartBeatQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
 
 	wgMain := &sync.WaitGroup{}
 	wgMain.Add(3)
 
 	redisLockObtained := make(chan bool)
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "redis:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	var instanceId int = 0
+	var lockName string
+	var lockValue string = uuid.NewString()
 
 	go func(_wgMain *sync.WaitGroup) {
 		defer func() {
@@ -92,16 +82,6 @@ func main() {
 		defer func() {
 			_wgMain.Done()
 		}()
-		rdb := redis.NewClient(&redis.Options{
-			Addr:     "redis:6379",
-			Password: "", // no password set
-			DB:       0,  // use default DB
-		})
-
-		instanceId := 0
-		var lockName string
-
-		lockValue := uuid.NewString()
 
 		for {
 
@@ -155,24 +135,39 @@ func main() {
 	go func(_wgMain *sync.WaitGroup) {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Println("Recovered in postgres goroutine", r)
+				fmt.Println("Recovered in redis heartbeat goroutine", r)
 			}
 		}()
 		defer func() {
 			_wgMain.Done()
 		}()
-		// Establish database connection
-		connStr := "postgres://park-announce:PosgresDb1591*@db/padb?sslmode=disable"
-		var err error
-		db, err = sql.Open("postgres", connStr)
-		if err != nil {
-			log.Fatal(err)
+
+		for {
+
+			select {
+
+			case <-redisHeartBeatQuit:
+
+				return
+
+			default:
+
+				set, setErr := rdb.Expire(lockName, time.Second*30).Result()
+
+				if setErr != nil {
+					log.Fatal(setErr)
+					continue
+				}
+				if !set {
+					log.Println("expire could not be set")
+					continue
+				}
+
+				time.Sleep(time.Second)
+
+			}
+
 		}
-		defer db.Close()
-
-		<-postgresQuit
-
-		log.Println("interrupt detect in postgres go rouitine")
 
 	}(wgMain)
 
@@ -192,13 +187,7 @@ func main() {
 			router := mux.NewRouter()
 
 			// Define API endpoints
-			router.HandleFunc("/users", createUser).Methods("POST")
-			router.HandleFunc("/users/{id}", getUser).Methods("GET")
-			router.HandleFunc("/users/{id}", updateUser).Methods("PUT")
-			router.HandleFunc("/users/{id}", deleteUser).Methods("DELETE")
-
 			router.HandleFunc("/locations/nearby", getNearByLocations).Methods("GET")
-
 			router.HandleFunc("/socket/connect", connectSocket)
 			router.HandleFunc("/socket/messages", sendSampleMessage)
 
@@ -268,79 +257,6 @@ func connectSocket(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-}
-
-// createUser creates a new user
-func createUser(w http.ResponseWriter, r *http.Request) {
-	var user User
-	json.NewDecoder(r.Body).Decode(&user)
-
-	// Insert the user into the database
-	err := db.QueryRow("INSERT INTO users (phone, nickname, name, surname, email) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-		user.Phone, user.Nickname, user.Name, user.Surname, user.Email).Scan(&user.ID)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
-}
-
-// getUser retrieves a user by ID
-func getUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id := params["id"]
-
-	var user User
-	err := db.QueryRow("SELECT id, phone, nickname, name, surname, email FROM users WHERE id = $1", id).Scan(
-		&user.ID, &user.Phone, &user.Nickname, &user.Name, &user.Surname, &user.Email)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
-}
-
-// updateUser updates a user by ID
-func updateUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id := params["id"]
-
-	var user User
-	json.NewDecoder(r.Body).Decode(&user)
-
-	// Update the user in the database
-	_, err := db.Exec("UPDATE users SET phone = $1, nickname = $2, name = $3, surname = $4, email = $5 WHERE id = $6",
-		user.Phone, user.Nickname, user.Name, user.Surname, user.Email, id)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Error updating user", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
-}
-
-// deleteUser deletes a user by ID
-func deleteUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id := params["id"]
-
-	// Delete the user from the database
-	_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Error deleting user", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 // getNearByLocations retrieves nearest locations
