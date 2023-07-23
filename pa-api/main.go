@@ -1,19 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"sort"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
-
-	"math"
 
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
@@ -22,6 +20,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/gorilla/websocket"
+	kafka "github.com/segmentio/kafka-go"
 )
 
 type Location struct {
@@ -35,6 +34,12 @@ type SocketMessage struct {
 	Data        interface{} `json:"data"`
 }
 
+type ClientKafkaRequestMessage struct {
+	ClientId string      `json:"client_id"`
+	ApiId    string      `json:"api_id"`
+	Data     interface{} `json:"data"`
+}
+
 type SendSocketMessage struct {
 	ClientId string `json:"client_id"`
 	Message  string `json:"message"`
@@ -46,6 +51,9 @@ var upgrader = websocket.Upgrader{
 }
 
 var connections map[string]*websocket.Conn = make(map[string]*websocket.Conn)
+var instanceId int = 0
+var lockName string
+var lockValue string = uuid.NewString()
 
 func main() {
 
@@ -58,8 +66,8 @@ func main() {
 	redisHeartBeatQuit := make(chan os.Signal, 1)
 	signal.Notify(redisHeartBeatQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
 
-	wgMain := &sync.WaitGroup{}
-	wgMain.Add(3)
+	kafkaConsumerQuit := make(chan os.Signal, 1)
+	signal.Notify(kafkaConsumerQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
 
 	redisLockObtained := make(chan bool)
 
@@ -69,10 +77,10 @@ func main() {
 		DB:       0,  // use default DB
 	})
 
-	var instanceId int = 0
-	var lockName string
-	var lockValue string = uuid.NewString()
+	wgMain := &sync.WaitGroup{}
+	wgMain.Add(4)
 
+	//try to get global instance id from redis using distributed lock.
 	go func(_wgMain *sync.WaitGroup) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -130,8 +138,10 @@ func main() {
 
 	}(wgMain)
 
+	//main routine continious running after redis lock obtained
 	<-redisLockObtained
 
+	//send heartbeat message to redis in spesific interval setting expire value for distributed lock key in redis
 	go func(_wgMain *sync.WaitGroup) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -171,6 +181,7 @@ func main() {
 
 	}(wgMain)
 
+	//handle socket message connection and message request.
 	go func(_wgMain *sync.WaitGroup) {
 		defer func() {
 			_wgMain.Done()
@@ -187,7 +198,6 @@ func main() {
 			router := mux.NewRouter()
 
 			// Define API endpoints
-			router.HandleFunc("/locations/nearby", getNearByLocations).Methods("GET")
 			router.HandleFunc("/socket/connect", connectSocket)
 			router.HandleFunc("/socket/messages", sendSampleMessage)
 
@@ -197,6 +207,164 @@ func main() {
 
 		<-httpServerQuit
 		log.Println("interrupt detect in http go rouitine")
+
+	}(wgMain)
+
+	//consume message from client_response_{{instanceId}} topic and try to send message to related socket client
+	//if there is no socket connection, sends this message to dead_letter_message topic
+	go func(_wgMain *sync.WaitGroup) {
+
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in http go routine", r)
+			}
+		}()
+
+		defer func() {
+			_wgMain.Done()
+		}()
+
+		r := kafka.NewReader(kafka.ReaderConfig{
+			Brokers:   []string{"kafka:9092"},
+			Topic:     fmt.Sprintf("client_response_%d", instanceId),
+			Partition: 0,
+			MaxBytes:  10e6, // 10MB
+		})
+
+		writer := &kafka.Writer{
+			Addr:                   kafka.TCP("kafka:9092"),
+			Topic:                  "dead_letter_messages",
+			AllowAutoTopicCreation: true,
+		}
+
+		defer func() {
+
+			if err := writer.Close(); err != nil {
+				log.Fatal("failed to close writer:", err)
+			}
+		}()
+
+		for {
+
+			select {
+
+			case <-kafkaConsumerQuit:
+				if err := r.Close(); err != nil {
+					log.Fatal("failed to close reader:", err)
+				}
+				return
+			default:
+				m, err := r.ReadMessage(context.Background())
+				if err != nil {
+					break
+				}
+
+				fmt.Printf("message consumed from topic : %s,  offset : %d, key : %s, value : %s\n", m.Topic, m.Offset, string(m.Key), string(m.Value))
+
+				var sendSocketMessage SendSocketMessage
+
+				err = json.Unmarshal(m.Value, &sendSocketMessage)
+				if err != nil {
+					break
+				}
+
+				conn := connections[sendSocketMessage.ClientId]
+
+				if conn == nil {
+					//produce this message to dead_letter_message topic
+					log.Printf("socket connection not found with id : %s, message is sending to dead_letter_messages topic", sendSocketMessage.ClientId)
+					messages := []kafka.Message{
+						{
+							Value: m.Value,
+						},
+					}
+
+					const retries = 3
+					for i := 0; i < retries; i++ {
+						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
+
+						// attempt to create topic prior to publishing the message
+						err = writer.WriteMessages(ctx, messages...)
+						if errors.Is(err, kafka.LeaderNotAvailable) || errors.Is(err, context.DeadlineExceeded) {
+							time.Sleep(time.Millisecond * 250)
+							continue
+						}
+
+						if err != nil {
+							log.Fatalf("unexpected error %v", err)
+						}
+						break
+					}
+					break
+				}
+
+				// write message to related socket client
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(sendSocketMessage.Message)); err != nil {
+					return
+				}
+			}
+
+		}
+
+	}(wgMain)
+
+	//consume message from dead_letter_messages topic and try to send message to related socket client
+	go func(_wgMain *sync.WaitGroup) {
+
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in http go routine", r)
+			}
+		}()
+
+		defer func() {
+			_wgMain.Done()
+		}()
+
+		r := kafka.NewReader(kafka.ReaderConfig{
+			Brokers:   []string{"kafka:9092"},
+			Topic:     "dead_letter_messages",
+			Partition: 0,
+			MaxBytes:  10e6, // 10MB
+		})
+
+		for {
+
+			select {
+
+			case <-kafkaConsumerQuit:
+				if err := r.Close(); err != nil {
+					log.Fatal("failed to close reader:", err)
+				}
+				return
+			default:
+				m, err := r.ReadMessage(context.Background())
+				if err != nil {
+					break
+				}
+				fmt.Printf("message consumed from topic : %s,  offset : %d, key : %s, value : %s\n", m.Topic, m.Offset, string(m.Key), string(m.Value))
+
+				var sendSocketMessage SendSocketMessage
+
+				err = json.Unmarshal(m.Value, &sendSocketMessage)
+				if err != nil {
+					break
+				}
+
+				conn := connections[sendSocketMessage.ClientId]
+
+				if conn == nil {
+					break
+				}
+
+				// write message to related socket client
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(sendSocketMessage.Message)); err != nil {
+					return
+				}
+			}
+
+		}
 
 	}(wgMain)
 
@@ -226,15 +394,25 @@ func connectSocket(w http.ResponseWriter, r *http.Request) {
 		log.Println(connErr)
 	}
 
+	writer := &kafka.Writer{
+		Addr:                   kafka.TCP("kafka:9092"),
+		Topic:                  "client_request",
+		AllowAutoTopicCreation: true,
+	}
+
+	defer func() {
+
+		if err := writer.Close(); err != nil {
+			log.Fatal("failed to close writer:", err)
+		}
+	}()
+
 	for {
 		// Read message from browser
-		msgType, msg, err := conn.ReadMessage()
+		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			return
 		}
-
-		// Print the message to the console
-		fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
 
 		var socketMessage SocketMessage
 		deSerializationError := json.Unmarshal(msg, &socketMessage)
@@ -252,86 +430,42 @@ func connectSocket(w http.ResponseWriter, r *http.Request) {
 
 		connections[socketMessage.ClientId] = conn
 
-		// Write message back to browser
-		if err = conn.WriteMessage(msgType, msg); err != nil {
+		clientKafkaRequestMessage := &ClientKafkaRequestMessage{
+
+			ClientId: socketMessage.ClientId,
+			ApiId:    fmt.Sprintf("%d", instanceId),
+			Data:     socketMessage.Data,
+		}
+
+		data, err := json.Marshal(clientKafkaRequestMessage)
+
+		if err != nil {
 			return
 		}
-	}
-}
 
-// getNearByLocations retrieves nearest locations
-func getNearByLocations(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	latitude, _ := strconv.ParseFloat(params["latitude"], 64)
-	longitude, _ := strconv.ParseFloat(params["longitude"], 64)
-	//distance, _ := strconv.ParseFloat(params["distance"], 64)
-
-	locations := []Location{
-		{Latitude: 37.7749, Longitude: -122.4194}, // San Francisco, CA
-		{Latitude: 40.7128, Longitude: -74.0060},  // New York, NY
-		{Latitude: 34.0522, Longitude: -118.2437}, // Los Angeles, CA
-		// Add more locations as needed
-	}
-
-	n := 2
-	nearestLocations := findNearestLocations(locations, latitude, longitude, n)
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(nearestLocations)
-}
-
-const earthRadius = 6371 // Earth's radius in kilometers
-
-func haversine(lat1, lon1, lat2, lon2 float64) float64 {
-	// Convert latitude and longitude from degrees to radians
-	lat1Rad := lat1 * math.Pi / 180
-	lon1Rad := lon1 * math.Pi / 180
-	lat2Rad := lat2 * math.Pi / 180
-	lon2Rad := lon2 * math.Pi / 180
-
-	// Calculate differences in latitude and longitude
-	dLat := lat2Rad - lat1Rad
-	dLon := lon2Rad - lon1Rad
-
-	// Calculate the central angle using the Haversine formula
-	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
-		math.Cos(lat1Rad)*math.Cos(lat2Rad)*
-			math.Sin(dLon/2)*math.Sin(dLon/2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-
-	// Calculate the distance using the Earth's radius
-	distance := earthRadius * c
-	return distance
-}
-
-func findNearestLocations(locations []Location, refLat, refLon float64, n int) []Location {
-	// Create a slice to store distances and their corresponding indices
-	type DistanceIndex struct {
-		distance float64
-		index    int
-	}
-	distances := make([]DistanceIndex, len(locations))
-
-	// Calculate distances and store them with their indices
-	for i, loc := range locations {
-		distances[i] = DistanceIndex{
-			distance: haversine(refLat, refLon, loc.Latitude, loc.Longitude),
-			index:    i,
+		messages := []kafka.Message{
+			{
+				Value: data,
+			},
 		}
+
+		const retries = 3
+		for i := 0; i < retries; i++ {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			// attempt to create topic prior to publishing the message
+			err = writer.WriteMessages(ctx, messages...)
+			if errors.Is(err, kafka.LeaderNotAvailable) || errors.Is(err, context.DeadlineExceeded) {
+				time.Sleep(time.Millisecond * 250)
+				continue
+			}
+
+			if err != nil {
+				log.Fatalf("unexpected error %v", err)
+			}
+			break
+		}
+
 	}
-
-	// Sort the distances in ascending order
-	sort.Slice(distances, func(i, j int) bool {
-		return distances[i].distance < distances[j].distance
-	})
-
-	// Create a slice to store the n nearest locations
-	nearestLocations := make([]Location, n)
-
-	// Extract the n nearest locations from the sorted distances
-	for i := 0; i < n; i++ {
-		nearestLocations[i] = locations[distances[i].index]
-	}
-
-	return nearestLocations
 }

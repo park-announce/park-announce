@@ -17,7 +17,7 @@ clienttan gonderilen istekler kafkada client_request isimli topic'e yazilacak. b
 }
 
 client_request isimli topicteki mesajlari consumer service okuyacak ve veri tabanindan uygun lokasyonlari bulacak. elde ettigi sonuclari kafkada client_response_x
-formatindaki topice yazacak . buradaki x degeri consumer_request topicinden okunan mesaj icerisindeki api_id alanindaki deger olmalidir.
+formatindaki topice yazacak . buradaki x degeri client_request topicinden okunan mesaj icerisindeki api_id alanindaki deger olmalidir.
 
 client_response_0
 client_response_1
@@ -54,3 +54,19 @@ socket.onmessage = function (e) {
 socket.send('{"client_id":"1234","message_type":"connection","data":{"name":"resul"}}');
 
 curl -kv -d '{"client_id":"1234","message":"test message"}' http://localhost:8000/socket/messages
+
+
+KAFKA
+
+docker exec -it kafka bash
+
+cd /opt/kafka/bin
+
+--topic list
+./kafka-topics.sh --zookeeper zookeeper:2181 --list
+
+--console consumer
+./kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic client_request --from-beginning
+
+--console producer
+./kafka-console-producer.sh --bootstrap-server kafka:9092 --topic client_response_0
