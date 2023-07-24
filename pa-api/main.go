@@ -34,6 +34,12 @@ type SocketMessage struct {
 	Data        interface{} `json:"data"`
 }
 
+type ClientKafkaResponseMessage struct {
+	ClientId string      `json:"client_id"`
+	ApiId    string      `json:"api_id"`
+	Data     interface{} `json:"data"`
+}
+
 type ClientKafkaRequestMessage struct {
 	ClientId string      `json:"client_id"`
 	ApiId    string      `json:"api_id"`
@@ -41,8 +47,8 @@ type ClientKafkaRequestMessage struct {
 }
 
 type SendSocketMessage struct {
-	ClientId string `json:"client_id"`
-	Message  string `json:"message"`
+	ClientId string      `json:"client_id"`
+	Data     interface{} `json:"data"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -261,18 +267,18 @@ func main() {
 
 				fmt.Printf("message consumed from topic : %s,  offset : %d, key : %s, value : %s\n", m.Topic, m.Offset, string(m.Key), string(m.Value))
 
-				var sendSocketMessage SendSocketMessage
+				var clientKafkaResponseMessage ClientKafkaResponseMessage
 
-				err = json.Unmarshal(m.Value, &sendSocketMessage)
+				err = json.Unmarshal(m.Value, &clientKafkaResponseMessage)
 				if err != nil {
 					break
 				}
 
-				conn := connections[sendSocketMessage.ClientId]
+				conn := connections[clientKafkaResponseMessage.ClientId]
 
 				if conn == nil {
 					//produce this message to dead_letter_message topic
-					log.Printf("socket connection not found with id : %s, message is sending to dead_letter_messages topic", sendSocketMessage.ClientId)
+					log.Printf("socket connection not found with id : %s, message is sending to dead_letter_messages topic", clientKafkaResponseMessage.ClientId)
 					messages := []kafka.Message{
 						{
 							Value: m.Value,
@@ -299,8 +305,14 @@ func main() {
 					break
 				}
 
+				// data, err := json.Marshal(clientKafkaResponseMessage.Data)
+				// if err != nil {
+				// 	log.Printf("unexpected error %v", err)
+				// 	break
+				// }
+
 				// write message to related socket client
-				if err := conn.WriteMessage(websocket.TextMessage, []byte(sendSocketMessage.Message)); err != nil {
+				if err := conn.WriteMessage(websocket.TextMessage, m.Value); err != nil {
 					return
 				}
 			}
@@ -345,21 +357,28 @@ func main() {
 				}
 				fmt.Printf("message consumed from topic : %s,  offset : %d, key : %s, value : %s\n", m.Topic, m.Offset, string(m.Key), string(m.Value))
 
-				var sendSocketMessage SendSocketMessage
+				var clientKafkaResponseMessage ClientKafkaResponseMessage
 
-				err = json.Unmarshal(m.Value, &sendSocketMessage)
+				err = json.Unmarshal(m.Value, &clientKafkaResponseMessage)
 				if err != nil {
+					log.Printf("unexpected error %v", err)
 					break
 				}
 
-				conn := connections[sendSocketMessage.ClientId]
+				conn := connections[clientKafkaResponseMessage.ClientId]
 
 				if conn == nil {
 					break
 				}
 
+				// data, err := json.Marshal(clientKafkaResponseMessage.Data)
+				// if err != nil {
+				// 	log.Printf("unexpected error %v", err)
+				// 	break
+				// }
+
 				// write message to related socket client
-				if err := conn.WriteMessage(websocket.TextMessage, []byte(sendSocketMessage.Message)); err != nil {
+				if err := conn.WriteMessage(websocket.TextMessage, m.Value); err != nil {
 					return
 				}
 			}
@@ -378,8 +397,16 @@ func sendSampleMessage(w http.ResponseWriter, r *http.Request) {
 
 	conn := connections[sendSocketMessage.ClientId]
 
+	data, err := json.Marshal(sendSocketMessage.Data)
+
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return
+	}
+
 	// Write message back to browser
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(sendSocketMessage.Message)); err != nil {
+	if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+		log.Printf("unexpected error %v", err)
 		return
 	}
 

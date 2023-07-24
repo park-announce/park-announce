@@ -38,6 +38,8 @@ her api kendine baglanti acan socket client objelerini key degeri clientid olaca
 client web socket baglantisi acacaktir.
 baglanti herhangi bir nedenle koptugunda otomatik olarak tekrar acilacaktir. ancak otomatik olarak tekrar baglanti acma isterkleri arasindaki sure exponansiyel olarak artacaktir.
 uygulamada yer arama aktif oldugu surece, belirli periyotlarda kullanicinin guncel konumu uzerinden en yakin uygun park yerleri listelenmesi icin socket mesaji gonderilecektir.
+client'in gonderdigi istekler icin kendi tarafinda bir id degeri tutulacaktir. en son gonderilen islemin id degeri ile socket uzerinden kendisine gelen mesaj icerisindeki id degerinin eslesip eslesmedigi
+client tarafindan kontrol edilecektir. eslesme yoksa bu mesaji dikkate almayacaktir(client'in ayni islemi birden fazla defa denemesi sonrasinda ilk denemesi icin gec gelen cevabin dikkate alinmamasi gerekiyor.)
 belirli bir konuma alinmak istendiginde google map uygulamasi acilacak.
 
 
@@ -51,7 +53,9 @@ socket.onmessage = function (e) {
     console.log(e.data);
 };
 
-socket.send('{"client_id":"1234","message_type":"connection","data":{"name":"resul"}}');
+
+583521.85, 4507077.86
+socket.send('{"client_id":"1234","message_type":"connection","data":{"longitude":583521.85,"latitude":4507077.86,"distance":5000}}');
 
 curl -kv -d '{"client_id":"1234","message":"test message"}' http://localhost:8000/socket/messages
 

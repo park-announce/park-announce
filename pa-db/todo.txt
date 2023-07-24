@@ -1,0 +1,16 @@
+CREATE TABLE foo (
+  geog geography
+);
+
+CREATE INDEX ON foo USING gist(geog);
+
+INSERT INTO foo (geog) VALUES (ST_MakePoint(590454.7399891173, 4519145.719617855));
+INSERT INTO foo (geog) VALUES (ST_MakePoint(590250.10594797, 4518558.019924332));
+INSERT INTO foo (geog) VALUES (ST_MakePoint(583304.1823994748, 4506069.654048115));
+INSERT INTO foo (geog) VALUES (ST_MakePoint(583324.4866324601, 4506805.373160211));
+ 
+SELECT * FROM foo WHERE ST_DWithin(geog, ST_MakePoint(583521.85, 4507077.86)::geography, 10000);
+
+SELECT ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude FROM foo WHERE ST_DWithin(geog, ST_MakePoint(583521.85, 4507077.86)::geography, 10000)
+
+SELECT ST_AsText(geog) FROM foo

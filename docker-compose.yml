@@ -20,7 +20,6 @@ services:
       - 5173:5173
     depends_on:
       - api
-
   db:
     container_name: db
     image: park-announce/pa-db
@@ -29,8 +28,9 @@ services:
     volumes:
       - './dbdata:/var/lib/postgresql/data'
     environment:
-      - POSTGRES_USER=park-announce
+      - POSTGRES_USER=park_announce
       - POSTGRES_PASSWORD=PosgresDb1591*
+      - POSTGRES_DB=padb
   pgadmin:
     container_name: pgadmin_container
     image: dpage/pgadmin4
