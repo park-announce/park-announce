@@ -29,9 +29,10 @@ type Location struct {
 }
 
 type SocketMessage struct {
-	ClientId    string      `json:"client_id"`
-	MessageType string      `json:"message_type"`
-	Data        interface{} `json:"data"`
+	ClientId      string      `json:"client_id"`
+	Operation     string      `json:"operation"`
+	TransactionId string      `json:"transaction_id"`
+	Data          interface{} `json:"data"`
 }
 
 type ClientKafkaResponseMessage struct {
@@ -41,9 +42,11 @@ type ClientKafkaResponseMessage struct {
 }
 
 type ClientKafkaRequestMessage struct {
-	ClientId string      `json:"client_id"`
-	ApiId    string      `json:"api_id"`
-	Data     interface{} `json:"data"`
+	ClientId      string      `json:"client_id"`
+	Operation     string      `json:"operation"`
+	TransactionId string      `json:"transaction_id"`
+	ApiId         string      `json:"api_id"`
+	Data          interface{} `json:"data"`
 }
 
 type SendSocketMessage struct {
@@ -54,6 +57,9 @@ type SendSocketMessage struct {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 var connections map[string]*websocket.Conn = make(map[string]*websocket.Conn)
@@ -415,6 +421,7 @@ func sendSampleMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func connectSocket(w http.ResponseWriter, r *http.Request) {
+
 	conn, connErr := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
 
 	if connErr != nil {
@@ -458,10 +465,11 @@ func connectSocket(w http.ResponseWriter, r *http.Request) {
 		connections[socketMessage.ClientId] = conn
 
 		clientKafkaRequestMessage := &ClientKafkaRequestMessage{
-
-			ClientId: socketMessage.ClientId,
-			ApiId:    fmt.Sprintf("%d", instanceId),
-			Data:     socketMessage.Data,
+			ClientId:      socketMessage.ClientId,
+			ApiId:         fmt.Sprintf("%d", instanceId),
+			TransactionId: socketMessage.TransactionId,
+			Operation:     socketMessage.Operation,
+			Data:          socketMessage.Data,
 		}
 
 		data, err := json.Marshal(clientKafkaRequestMessage)

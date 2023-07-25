@@ -15,19 +15,24 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"github.com/google/uuid"
 	kafka "github.com/segmentio/kafka-go"
 )
 
 type ClientKafkaRequestMessage struct {
-	ClientId string      `json:"client_id"`
-	ApiId    string      `json:"api_id"`
-	Data     interface{} `json:"data"`
+	ClientId      string      `json:"client_id"`
+	Operation     string      `json:"operation"`
+	TransactionId string      `json:"transaction_id"`
+	ApiId         string      `json:"api_id"`
+	Data          interface{} `json:"data"`
 }
 
 type ClientKafkaResponseMessage struct {
-	ClientId string      `json:"client_id"`
-	ApiId    string      `json:"api_id"`
-	Data     interface{} `json:"data"`
+	ClientId      string      `json:"client_id"`
+	ApiId         string      `json:"api_id"`
+	Operation     string      `json:"operation"`
+	TransactionId string      `json:"transaction_id"`
+	Data          interface{} `json:"data"`
 }
 
 type User struct {
@@ -46,7 +51,117 @@ type FindNearbyLocationRequest struct {
 	Distance  float64 `json:"distance"`
 }
 
+type CreateParkLocationRequest struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
+type IOperation interface {
+	Do(data interface{}) (error, interface{})
+}
+
+type FindLocationsNearbyOperation struct{}
+
+func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{}) {
+
+	clientKafkaRequestMessage := data.(ClientKafkaRequestMessage)
+
+	findNearbyLocationRequestData, err := json.Marshal(clientKafkaRequestMessage.Data)
+
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	var findNearbyLocationRequest FindNearbyLocationRequest
+
+	err = json.Unmarshal(findNearbyLocationRequestData, &findNearbyLocationRequest)
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	rows, err := db.Query("SELECT ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude FROM pa_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4)", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance)
+
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	defer rows.Close()
+
+	var locations []Location
+	for rows.Next() {
+		var location Location
+		if err := rows.Scan(&location.Longitude, &location.Latitude); err != nil {
+			log.Printf("unexpected error %v", err)
+		}
+		locations = append(locations, location)
+	}
+	return nil, locations
+}
+
+type CreateParkLocationOperation struct{}
+
+func (o *CreateParkLocationOperation) Do(data interface{}) (error, interface{}) {
+
+	clientKafkaRequestMessage := data.(ClientKafkaRequestMessage)
+
+	createParkLocationRequestData, err := json.Marshal(clientKafkaRequestMessage.Data)
+
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	var createParkLocationRequest CreateParkLocationRequest
+
+	err = json.Unmarshal(createParkLocationRequestData, &createParkLocationRequest)
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	result, err := db.Exec("INSERT INTO pa_locations (id,geog,owner_id) VALUES($1,ST_MakePoint($2, $3)::geography,$4)", uuid.New().String(), createParkLocationRequest.Longitude, createParkLocationRequest.Latitude, clientKafkaRequestMessage.ClientId)
+
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	count, err := result.RowsAffected()
+
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	return err, count
+
+}
+
+var operations map[string]IOperation = make(map[string]IOperation, 0)
+
+var db *sql.DB
+
 func main() {
+
+	operations["get_locations_nearby"] = &FindLocationsNearbyOperation{}
+	operations["create_park_location"] = &CreateParkLocationOperation{}
+
+	//initialize postgres client
+	connStr := "postgres://park_announce:PosgresDb1591*@db/padb?sslmode=disable"
+	var dbError error
+	db, dbError = sql.Open("postgres", connStr)
+	if dbError != nil {
+		log.Println(dbError)
+	}
+
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Println("failed to close db:", err)
+		}
+	}()
 
 	kafkaConsumerQuit := make(chan os.Signal, 1)
 	signal.Notify(kafkaConsumerQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
@@ -87,19 +202,6 @@ func main() {
 			}
 		}()
 
-		//initialize postgres client
-		connStr := "postgres://park_announce:PosgresDb1591*@db/padb?sslmode=disable"
-		db, err := sql.Open("postgres", connStr)
-		if err != nil {
-			log.Println(err)
-		}
-
-		defer func() {
-			if err := db.Close(); err != nil {
-				log.Println("failed to close db:", err)
-			}
-		}()
-
 		for {
 
 			select {
@@ -126,47 +228,26 @@ func main() {
 					break
 				}
 
-				findNearbyLocationRequestData, err := json.Marshal(clientKafkaRequestMessage.Data)
+				operation := operations[clientKafkaRequestMessage.Operation]
+
+				if operation == nil {
+					log.Printf("unimplemented operation : %s", clientKafkaRequestMessage.Operation)
+					break
+				}
+
+				err, responseData := operation.Do(clientKafkaRequestMessage)
 
 				if err != nil {
 					log.Printf("unexpected error %v", err)
 					break
-				}
-
-				var findNearbyLocationRequest FindNearbyLocationRequest
-
-				err = json.Unmarshal(findNearbyLocationRequestData, &findNearbyLocationRequest)
-				if err != nil {
-					log.Printf("unexpected error %v", err)
-					break
-				}
-
-				//do sth with consumed message and prepare response message
-
-				//fetch nearby locations with latitude, longitude and distance
-
-				rows, err := db.Query("SELECT ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude FROM foo WHERE ST_DWithin(geog, ST_MakePoint($1, $2)::geography, $3)", findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance)
-
-				if err != nil {
-					log.Printf("unexpected error %v", err)
-					break
-				}
-
-				defer rows.Close()
-
-				var locations []Location
-				for rows.Next() {
-					var location Location
-					if err := rows.Scan(&location.Longitude, &location.Latitude); err != nil {
-						log.Printf("unexpected error %v", err)
-					}
-					locations = append(locations, location)
 				}
 
 				clientKafkaResponseMessage := &ClientKafkaResponseMessage{
-					ClientId: clientKafkaRequestMessage.ClientId,
-					ApiId:    clientKafkaRequestMessage.ApiId,
-					Data:     locations,
+					ClientId:      clientKafkaRequestMessage.ClientId,
+					ApiId:         clientKafkaRequestMessage.ApiId,
+					TransactionId: clientKafkaRequestMessage.TransactionId,
+					Operation:     clientKafkaRequestMessage.Operation,
+					Data:          responseData,
 				}
 
 				clientKafkaResponseMessageData, err := json.Marshal(clientKafkaResponseMessage)

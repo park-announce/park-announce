@@ -54,9 +54,17 @@ socket.onmessage = function (e) {
 };
 
 
-583521.85, 4507077.86
-socket.send('{"client_id":"1234","message_type":"connection","data":{"longitude":583521.85,"latitude":4507077.86,"distance":5000}}');
+--mevcut konuma ve belli bir uzakliga gore en yakin park yerlerini elde etmek icin gonderilen istek
+socket.send('{"client_id":"1234","operation":"get_locations_nearby","transaction_id":"123e4567-e89b-12d3-a456-426655440000","data":{"longitude":583521.85,"latitude":4507077.86,"distance":5000}}');
 
+--bos park yeri bildirimi yapmak icin
+socket.send('{"client_id":"1234","operation":"create_park_location","transaction_id":"123e4567-e89b-12d3-a456-426655440000","data":{"longitude":583521.85,"latitude":4507077.86}}');
+
+--park yerini belirli bir sure sonra bosaltacagini bildirmek icin.
+socket.send('{"client_id":"1234","operation":"schedule_park_availability","transaction_id":"123e4567-e89b-12d3-a456-426655440000","data":{"longitude":583521.85,"latitude":4507077.86,"duration":300}}');
+
+
+--mevcut socket baglantisina ornek mesaj gonderimi
 curl -kv -d '{"client_id":"1234","message":"test message"}' http://localhost:8000/socket/messages
 
 

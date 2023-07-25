@@ -1,6 +1,4 @@
-CREATE TABLE foo (
-  geog geography
-);
+CREATE TABLE foo ( geog geography );
 
 CREATE INDEX ON foo USING gist(geog);
 
