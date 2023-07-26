@@ -125,68 +125,60 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   @override
   Widget build(BuildContext context) {
     debugPrint('user location: ${userLocation.latitude} ${userLocation.longitude}');
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        children: [
-          Flexible(
-            child: FlutterMap(
-              mapController: mapController,
-              options: MapOptions(
-                onMapEvent: onMapEvent,
-                initialCenter: const LatLng(41, 29),
-                initialZoom: 15,
-                interactionOptions: InteractionOptions(
-                  flags: flags,
-                ),
+    return Column(
+      children: [
+        Flexible(
+          child: FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+              onMapEvent: onMapEvent,
+              initialCenter: const LatLng(41, 29),
+              initialZoom: 15,
+              interactionOptions: InteractionOptions(
+                flags: flags,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'dev.fleaflet.flutter_map.example',
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      width: 10,
-                      height: 10,
-                      point: userLocation,
-                      builder: (ctx) => GestureDetector(
-                        child: const Icon(Icons.location_pin),
-                        onTap: () {
-                          _getLocation().then((value) => {_setLocation(value)});
-                        },
-                      ),
-                    ),
-                    Marker(
-                      width: 10,
-                      height: 10,
-                      point: const LatLng(41.09, 29.002),
-                      builder: (ctx) => const FaIcon(FontAwesomeIcons.squareParking),
-                    ),
-                    Marker(
-                      width: 10,
-                      height: 10,
-                      point: LatLng(userLocation.latitude + 0.01, userLocation.latitude + 0.001),
-                      builder: (ctx) => const FaIcon(FontAwesomeIcons.squareParking),
-                    ),
-                    Marker(
-                      width: 10,
-                      height: 10,
-                      point: LatLng(userLocation.latitude + 0.001, userLocation.latitude + 0.001),
-                      builder: (ctx) => GestureDetector(
-                          onTap: () {
-                            _openMap(41.09, 29.001);
-                          },
-                          child: const FaIcon(FontAwesomeIcons.squareParking)),
-                    ),
-                  ],
-                )
-              ],
             ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'dev.fleaflet.flutter_map.example',
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    width: 10,
+                    height: 10,
+                    point: userLocation,
+                    builder: (ctx) => const Icon(Icons.location_pin),
+                  ),
+                  Marker(
+                    width: 10,
+                    height: 10,
+                    point: const LatLng(41.09, 29.002),
+                    builder: (ctx) => const FaIcon(FontAwesomeIcons.squareParking),
+                  ),
+                  Marker(
+                    width: 10,
+                    height: 10,
+                    point: LatLng(userLocation.latitude + 0.01, userLocation.latitude + 0.001),
+                    builder: (ctx) => const FaIcon(FontAwesomeIcons.squareParking),
+                  ),
+                  Marker(
+                    width: 10,
+                    height: 10,
+                    point: LatLng(userLocation.latitude + 0.001, userLocation.latitude + 0.001),
+                    builder: (ctx) => GestureDetector(
+                        onTap: () {
+                          _openMap(41.09, 29.001);
+                        },
+                        child: const FaIcon(FontAwesomeIcons.squareParking)),
+                  ),
+                ],
+              )
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
