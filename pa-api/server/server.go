@@ -32,5 +32,6 @@ func AddDefaultMiddlewaresToEngine(server *gin.Engine) {
 	//engine.Use(secure.Secure(secure.Options))
 	server.Use(gin.Logger())
 	server.Use(gin.Recovery())
+	server.Use(middleware.CORSMiddleware())
 	server.Use(middleware.UseUserMiddleware())
 }
