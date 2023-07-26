@@ -33,7 +33,7 @@ class MapStack extends StatelessWidget {
                               children: List.generate(10, (index) => index)
                                   .map(
                                     (e) => TextButton(
-                                      style: TextButton.styleFrom(fixedSize: Size(double.infinity, 3), padding: EdgeInsets.only(left: 1)),
+                                      style: TextButton.styleFrom(fixedSize: const Size(double.infinity, 3), padding: const EdgeInsets.only(left: 1)),
                                       onPressed: () {
                                         debugPrint(e.toString());
                                       },
@@ -42,7 +42,7 @@ class MapStack extends StatelessWidget {
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Text(e.toString(), style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                                            Text(e.toString(), style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
                                           ],
                                         ),
                                       ),
@@ -87,34 +87,34 @@ class MapStack extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade500,
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Text(
                       '750 Metre',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                     SizedBox(width: 5),
                     Text(
                       '|',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                     SizedBox(width: 5),
                     Text(
                       'Müsait park yeri: 20',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 30),
+          const SizedBox(height: 30),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -122,8 +122,8 @@ class MapStack extends StatelessWidget {
                 width: MediaQuery.of(context).size.width / 2,
                 child: ElevatedButton(
                   onPressed: () {},
-                  child: Text('Bu bölgede ara'),
                   style: TextButton.styleFrom(backgroundColor: Colors.green.shade400, foregroundColor: Colors.white),
+                  child: const Text('Bu bölgede ara'),
                 ),
               ),
             ],

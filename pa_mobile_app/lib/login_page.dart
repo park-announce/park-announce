@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
       height: double.infinity,
       width: double.infinity,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8),
         child: Stack(children: [
           Positioned(
               bottom: 0,
@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(8),
                       child: Container(
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Colors.white),
                         child: MaterialButton(
@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
               padding: const EdgeInsets.only(bottom: 20, top: 10),
               width: double.infinity,
               child: Padding(
-                padding: const EdgeInsets.all(18.0),
+                padding: const EdgeInsets.all(18),
                 child: Wrap(
                   children: [
                     PaLoginButton(

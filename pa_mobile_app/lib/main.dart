@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pa_mobile_app/login_page.dart';
-import 'package:pa_mobile_app/map_stack.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +27,7 @@ class _MyAppState extends State<MyApp> {
         title: 'flutter_map Demo',
         theme: ThemeData(
           useMaterial3: true,
-          textTheme: TextTheme(bodySmall: TextStyle(fontSize: 10)),
+          textTheme: const TextTheme(bodySmall: TextStyle(fontSize: 10)),
           colorSchemeSeed: const Color(0xFF8dea88),
         ),
         home: const SafeArea(
