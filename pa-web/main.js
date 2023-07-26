@@ -8,37 +8,46 @@ import { Point } from 'ol/geom';;
 import Feature from 'ol/Feature';
 import Icon from 'ol/style/Icon';
 import Style from 'ol/style/Style';
+import axios from 'axios';
 
 const markerSource = new sourceVector();
 
 
 
 
-const socket = new WebSocket("ws://localhost:8000/socket/connect?Authorization="+window.localStorage.getItem("googleToken"));
+let socket;
+axios.post('http://localhost:8000/google/oauth2/token', {
+    "token": window.localStorage.getItem("googleToken")
+}).then(response => {
+    const paToken = response.data.token;
+    socket = new WebSocket(`ws://localhost:8000/socket/connect?Authorization=${paToken}`);
+    socket.onmessage = function (e) {
+        //console.log(e.data);
+
+        var message = JSON.parse(e.data);
+        var matchMapping = mapping[message.operation];
+
+        if (matchMapping != null && matchMapping != undefined) {
+            matchMapping(message);
+        }
+
+    };
+})
+
+
 
 var mapping = {}
-mapping["get_locations_nearby"] = function(message){
+mapping["get_locations_nearby"] = function (message) {
 
-    
 
-   message.data.forEach(function(item,index){
-    addMarker(item.longitude,item.latitude);
 
-   });
+    message.data.forEach(function (item, index) {
+        addMarker(item.longitude, item.latitude);
+
+    });
 
 };
 
-socket.onmessage = function (e) {
-    //console.log(e.data);
-
-    var message =JSON.parse(e.data);
-    var matchMapping = mapping[message.operation];
-
-    if (matchMapping != null && matchMapping != undefined){
-        matchMapping(message);
-    }
-   
-};
 
 
 
@@ -112,8 +121,8 @@ function addMarker(lon, lat) {
 
     markerSource.addFeature(iconFeature);
 
-    //var data = {"client_id":"1234","operation":"create_park_location","transaction_id":"123e4567-e89b-12d3-a456-426655440000","data":{"longitude":lon,"latitude":lat}};
-    //socket.send(JSON.stringify(data));
+    var data = { "client_id": "1234", "operation": "create_park_location", "transaction_id": "123e4567-e89b-12d3-a456-426655440000", "data": { "longitude": lon, "latitude": lat } };
+    socket.send(JSON.stringify(data));
 
 }
 
@@ -130,14 +139,14 @@ map.on('dblclick', function (event) {
     var lat = lonLat[1];
 
 
-    var data ={"client_id":"1234","operation":"get_locations_nearby","transaction_id":"123e4567-e89b-12d3-a456-426655440000","data":{"longitude":lon,"latitude":lat,"distance":5000}}
+    var data = { "client_id": "1234", "operation": "get_locations_nearby", "transaction_id": "123e4567-e89b-12d3-a456-426655440000", "data": { "longitude": lon, "latitude": lat, "distance": 5000 } }
 
     socket.send(JSON.stringify(data));
 
 });
 
 function parseJwt(token) {
-    var base64Url = token.split('.')[1];        
+    var base64Url = token.split('.')[1];
     var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     return JSON.parse(window.atob(base64));
 }
