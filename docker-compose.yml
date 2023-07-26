@@ -8,6 +8,11 @@ services:
       - 8000:8000
     depends_on:
       - kafka
+    environment:
+      - PA_API_JWT_KEY=hdRZ5qVg3Eeiy8a6bgosxw
+      - PA_API_GOOGLE_CLIENT_ID=840817671695-cjdfm22jh549drbmbgt8jlpdo4neum5a.apps.googleusercontent.com
+      - PA_API_GOOGLE_CLIENT_SECRET=Xw_i4t_alFdIfBSnMD5pk1_Y
+      - PA_API_GOOGLE_REDIRECT_URI=http://localhost:5173
   service:
     container_name: service
     image: park-announce/pa-service

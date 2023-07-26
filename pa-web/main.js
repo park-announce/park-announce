@@ -11,7 +11,10 @@ import Style from 'ol/style/Style';
 
 const markerSource = new sourceVector();
 
-const socket = new WebSocket("ws://localhost:8000/socket/connect");
+
+
+
+const socket = new WebSocket("ws://localhost:8000/socket/connect?Authorization="+window.localStorage.getItem("googleToken"));
 
 var mapping = {}
 mapping["get_locations_nearby"] = function(message){
@@ -132,3 +135,9 @@ map.on('dblclick', function (event) {
     socket.send(JSON.stringify(data));
 
 });
+
+function parseJwt(token) {
+    var base64Url = token.split('.')[1];        
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(window.atob(base64));
+}
