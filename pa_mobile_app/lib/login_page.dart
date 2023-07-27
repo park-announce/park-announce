@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pa_mobile_app/components/pa_login_button.dart';
+import 'package:pa_mobile_app/main_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const List<String> scopes = <String>['email'];
+
+GoogleSignIn _googleSignIn = GoogleSignIn(
+  // Optional clientId
+  // clientId: 'your-client_id.apps.googleusercontent.com',
+  scopes: scopes,
+);
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,6 +24,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) async {
+      // In mobile, being authenticated means being authorized...
+      SharedPreferences.getInstance().then((pref) => {pref.setString('Name', account!.displayName!)});
+      Navigator.of(context).push(
+        MaterialPageRoute<dynamic>(builder: (context) => const MainPage()),
+      );
+      // However, in the web...
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       showLoginMenu();
     });
@@ -20,37 +40,39 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(color: Color(0xFF132555)),
-      height: double.infinity,
-      width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Stack(children: [
-          Positioned(
-              bottom: 0,
-              right: 0,
-              left: 0,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Container(
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Colors.white),
-                        child: MaterialButton(
-                          textColor: Colors.black,
-                          child: const Text('Get Started'),
-                          onPressed: () {
-                            showLoginMenu();
-                          },
+    return Scaffold(
+      backgroundColor: Color(0xFF132555),
+      body: Container(
+        height: double.infinity,
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Stack(children: [
+            Positioned(
+                bottom: 0,
+                right: 0,
+                left: 0,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Container(
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Colors.white),
+                          child: MaterialButton(
+                            textColor: Colors.black,
+                            child: const Text('Get Started'),
+                            onPressed: () {
+                              showLoginMenu();
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ))
-        ]),
+                  ],
+                ))
+          ]),
+        ),
       ),
     );
   }
@@ -146,7 +168,9 @@ class _LoginPageState extends State<LoginPage> {
                     PaLoginButton(
                       backColor: Colors.white,
                       textColor: Colors.black,
-                      onPressedFunction: () {},
+                      onPressedFunction: () {
+                        _googleSignIn.signIn();
+                      },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

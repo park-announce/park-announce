@@ -39,3 +39,4 @@ go.work
 #ignore postgres volume (dbdata folder)
 dbdata/
 pgadmin-data/
+pa-web/yarn.lock

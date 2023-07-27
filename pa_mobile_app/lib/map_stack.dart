@@ -25,7 +25,7 @@ class MapStack extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: () {
-                    showModalBottomSheet(
+                    showModalBottomSheet<dynamic>(
                       context: context,
                       builder: (context) => SafeArea(
                         child: SingleChildScrollView(

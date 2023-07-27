@@ -1,8 +1,14 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:pa_mobile_app/firebase_options.dart';
 import 'package:pa_mobile_app/login_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -28,7 +34,7 @@ class _MyAppState extends State<MyApp> {
         theme: ThemeData(
           useMaterial3: true,
           textTheme: const TextTheme(bodySmall: TextStyle(fontSize: 10)),
-          colorSchemeSeed: const Color(0xFF8dea88),
+          //colorSchemeSeed: const Color(0xFF8dea88),
         ),
         home: const SafeArea(
           child: Scaffold(

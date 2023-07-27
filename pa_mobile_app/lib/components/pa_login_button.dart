@@ -12,17 +12,19 @@ class PaLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: MaterialButton(
+    return Row(
+      children: [
+        const SizedBox(width: 20),
+        Expanded(
+          child: MaterialButton(
+            padding: EdgeInsets.zero,
             textColor: textColor,
             onPressed: () {
               onPressedFunction();
             },
             child: Container(
                 height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 30),
                 width: double.infinity,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
@@ -30,8 +32,11 @@ class PaLoginButton extends StatelessWidget {
                   color: backColor,
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: child)),
-      ),
+                child: child),
+          ),
+        ),
+        const SizedBox(width: 20),
+      ],
     );
   }
 }
