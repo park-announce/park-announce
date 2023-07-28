@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pa_mobile_app/map_stack.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatelessWidget {
@@ -18,16 +17,15 @@ class MainPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Welcome,',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      const Text('Welcome,', style: TextStyle(color: Colors.white)),
                       Text(
                         snapshot.data!.userName,
                         style: const TextStyle(color: Colors.white),
                       ),
+                      Text(snapshot.data!.eMail, style: const TextStyle(color: Colors.white)),
                       const SizedBox(height: 20),
-                      const Expanded(child: MapStack()),
+                      //const Expanded(child: MapStack()),
+                      Text(snapshot.data!.responseBody, style: const TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),
@@ -41,13 +39,15 @@ class MainPage extends StatelessWidget {
 
   Future<UserInfo> _getDisplayName() async {
     final SharedPreferences pref = await SharedPreferences.getInstance();
-    return UserInfo(pref.getString('Name')!, pref.getString('IdToken')!);
+    return UserInfo(pref.getString('Name')!, pref.getString('IdToken')!, pref.getString('ResponseBody')!, pref.getString('Email')!);
   }
 }
 
 class UserInfo {
   final String userName;
+  final String eMail;
   final String idToken;
+  final String responseBody;
 
-  UserInfo(this.userName, this.idToken);
+  UserInfo(this.userName, this.idToken, this.responseBody, this.eMail);
 }

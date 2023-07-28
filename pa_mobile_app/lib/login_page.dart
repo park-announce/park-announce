@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:pa_mobile_app/components/pa_login_button.dart';
+import 'package:pa_mobile_app/google_auth.dart';
 import 'package:pa_mobile_app/main_page.dart';
+import 'package:pa_mobile_app/models/api_error_response.dart';
+import 'package:pa_mobile_app/models/check_api_token_response.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const List<String> scopes = <String>['email'];
@@ -29,13 +33,22 @@ class _LoginPageState extends State<LoginPage> {
       // In mobile, being authenticated means being authorized...
       SharedPreferences.getInstance().then((pref) {
         account!.authentication.then((value) {
+          checkApiToken(value.idToken!).then((apiTokenResponseBody) {
+            if (apiTokenResponseBody is CheckApiTokenResponse) {
+              final decoded = JwtDecoder.decode(apiTokenResponseBody.token);
+              pref.setString('Email', decoded["email"].toString());
+            } else if (apiTokenResponseBody is ApiErrorResponse) {
+              pref.setString('ResponseBody', apiTokenResponseBody.message);
+            }
+          });
           pref.setString('IdToken', value.idToken!);
         });
         pref.setString('Name', account.displayName!);
+        Navigator.of(context).push(
+          MaterialPageRoute<dynamic>(builder: (context) => const MainPage()),
+        );
       });
-      Navigator.of(context).push(
-        MaterialPageRoute<dynamic>(builder: (context) => const MainPage()),
-      );
+
       // However, in the web...
     });
 
