@@ -18,7 +18,7 @@ const markerSource = new sourceVector();
 
 
 let socket;
-axios.post('http://localhost:8000/google/oauth2/token', {
+axios.post('http://localhost:8000/google/oauth2/code', {
     "token": window.localStorage.getItem("googleToken")
 }).then(response => {
     const paToken = response.data.token;

@@ -44,7 +44,7 @@ func (backgroundOperation *BackgroundOperation) GetGlobalInstanceId(wgMain *sync
 		set, setErr := redis.SetNX(lockName, lockValue, 0).Result()
 
 		if setErr != nil {
-			log.Fatal(setErr)
+			log.Println(setErr)
 			global.IncrementInstanceId()
 			continue
 		}
@@ -67,14 +67,14 @@ func (backgroundOperation *BackgroundOperation) GetGlobalInstanceId(wgMain *sync
 	log.Printf("lockName : %s, lockValue : %s, lockValueFromRedis : %s", lockName, lockValue, lockValueFromRedis)
 
 	if getErr != nil {
-		log.Fatal(getErr)
+		log.Println(getErr)
 	}
 
 	if lockValueFromRedis == lockValue {
 		deleteResult, delErr := redis.Del(lockName).Result()
 
 		if delErr != nil {
-			log.Fatal(delErr)
+			log.Println(delErr)
 		}
 		if deleteResult > 0 {
 			log.Printf("redis key delete result. key : %s, value : %s, result : %d", lockName, lockValue, deleteResult)
@@ -103,14 +103,10 @@ func (backgroundOperation *BackgroundOperation) RedisHeartBeat(wgMain *sync.Wait
 
 		default:
 
-			set, setErr := redis.Expire(lockName, time.Second*30).Result()
+			_, setErr := redis.Expire(lockName, time.Second*30).Result()
 
 			if setErr != nil {
-				log.Fatal(setErr)
-				continue
-			}
-			if !set {
-				log.Printf("expire could not be set. lockname : %s", lockName)
+				log.Println(setErr)
 				continue
 			}
 
@@ -169,7 +165,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 	defer func() {
 
 		if err := writer.Close(); err != nil {
-			log.Fatal("failed to close writer:", err)
+			log.Println("failed to close writer:", err)
 		}
 	}()
 
@@ -179,7 +175,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 
 		case <-kafkaConsumerQuit:
 			if err := reader.Close(); err != nil {
-				log.Fatal("failed to close reader:", err)
+				log.Println("failed to close reader:", err)
 			}
 			return
 		default:
@@ -257,7 +253,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain
 
 		case <-kafkaConsumerQuit:
 			if err := reader.Close(); err != nil {
-				log.Fatal("failed to close reader:", err)
+				log.Println("failed to close reader:", err)
 			}
 			return
 		default:

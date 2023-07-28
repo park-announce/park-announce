@@ -20,9 +20,14 @@ func NewServer(hub *service.SocketHub) *gin.Engine {
 		colorHandler.HandleSocketConnection(ctx, hub)
 	})
 
+	server.POST("/google/oauth2/code", func(ctx *gin.Context) {
+		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient()))
+		userHandler.HandleOAuth2GoogleCode(ctx)
+	})
+
 	server.POST("/google/oauth2/token", func(ctx *gin.Context) {
 		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient()))
-		userHandler.HandleOAuth2Google(ctx)
+		userHandler.HandleOAuth2GoogleToken(ctx)
 	})
 
 	return server

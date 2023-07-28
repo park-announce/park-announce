@@ -49,7 +49,7 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 
 	defer func() {
 		if err := writer.Close(); err != nil {
-			log.Fatal("failed to close writer:", err)
+			log.Println("failed to close writer:", err)
 		}
 	}()
 
