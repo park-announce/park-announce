@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pa_mobile_app/map_stack.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatelessWidget {
@@ -25,10 +26,8 @@ class MainPage extends StatelessWidget {
                         snapshot.data!.userName,
                         style: const TextStyle(color: Colors.white),
                       ),
-                      Text(
-                        snapshot.data!.idToken,
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                      const SizedBox(height: 20),
+                      const Expanded(child: MapStack()),
                     ],
                   ),
                 ),

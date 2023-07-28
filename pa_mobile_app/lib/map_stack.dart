@@ -23,42 +23,11 @@ class MapStack extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet<dynamic>(
-                      context: context,
-                      builder: (context) => SafeArea(
-                        child: SingleChildScrollView(
-                          child: Wrap(
-                              children: List.generate(10, (index) => index)
-                                  .map(
-                                    (e) => TextButton(
-                                      style: TextButton.styleFrom(fixedSize: const Size(double.infinity, 3), padding: const EdgeInsets.only(left: 1)),
-                                      onPressed: () {
-                                        debugPrint(e.toString());
-                                      },
-                                      child: SizedBox(
-                                        width: MediaQuery.of(context).size.width,
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(e.toString(), style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList()),
-                        ),
-                      ),
-                    );
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: Colors.greenAccent.shade700,
-                    child: const Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
+                CircleAvatar(
+                  backgroundColor: Colors.greenAccent.shade700,
+                  child: const Icon(
+                    Icons.add,
+                    color: Colors.white,
                   ),
                 ),
               ],
