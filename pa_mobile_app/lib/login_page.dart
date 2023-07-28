@@ -24,9 +24,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    _googleSignIn.signInSilently();
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) async {
       // In mobile, being authenticated means being authorized...
-      SharedPreferences.getInstance().then((pref) => {pref.setString('Name', account!.displayName!)});
+      SharedPreferences.getInstance().then((pref) {
+        account!.authentication.then((value) {
+          pref.setString('IdToken', value.idToken!);
+        });
+        pref.setString('Name', account.displayName!);
+      });
       Navigator.of(context).push(
         MaterialPageRoute<dynamic>(builder: (context) => const MainPage()),
       );

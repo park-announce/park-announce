@@ -8,7 +8,7 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF132555),
-      body: FutureBuilder<String?>(
+      body: FutureBuilder<UserInfo?>(
           future: _getDisplayName(),
           builder: (context, snapshot) {
             if (snapshot.hasData && snapshot.data != null) {
@@ -17,27 +17,38 @@ class MainPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
+                      const Text(
                         'Welcome,',
                         style: TextStyle(color: Colors.white),
                       ),
                       Text(
-                        snapshot.data!,
-                        style: TextStyle(color: Colors.white),
+                        snapshot.data!.userName,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      Text(
+                        snapshot.data!.idToken,
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ],
                   ),
                 ),
               );
             } else {
-              return Text('No Data');
+              return const Text('No Data');
             }
           }),
     );
   }
 
-  Future<String?> _getDisplayName() async {
+  Future<UserInfo> _getDisplayName() async {
     final SharedPreferences pref = await SharedPreferences.getInstance();
-    return pref.getString('Name');
+    return UserInfo(pref.getString('Name')!, pref.getString('IdToken')!);
   }
+}
+
+class UserInfo {
+  final String userName;
+  final String idToken;
+
+  UserInfo(this.userName, this.idToken);
 }
