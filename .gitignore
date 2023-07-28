@@ -40,3 +40,4 @@ go.work
 dbdata/
 pgadmin-data/
 pa-web/yarn.lock
+pa-db/node-v18.17.0.pkg

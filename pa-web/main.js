@@ -9,6 +9,8 @@ import Feature from 'ol/Feature';
 import Icon from 'ol/style/Icon';
 import Style from 'ol/style/Style';
 import axios from 'axios';
+import {v4 as uuidv4} from 'uuid';
+
 
 const markerSource = new sourceVector();
 
@@ -120,9 +122,9 @@ function addMarker(lon, lat) {
     });
 
     markerSource.addFeature(iconFeature);
-
-    var data = { "client_id": "1234", "operation": "create_park_location", "transaction_id": "123e4567-e89b-12d3-a456-426655440000", "data": { "longitude": lon, "latitude": lat } };
-    socket.send(JSON.stringify(data));
+    let trxId = uuidv4();
+    // var data = {"operation": "create_park_location", "transaction_id": trxId, "data": { "longitude": lon, "latitude": lat } };
+    // socket.send(JSON.stringify(data));
 
 }
 
@@ -138,8 +140,8 @@ map.on('dblclick', function (event) {
     var lon = lonLat[0];
     var lat = lonLat[1];
 
-
-    var data = { "client_id": "1234", "operation": "get_locations_nearby", "transaction_id": "123e4567-e89b-12d3-a456-426655440000", "data": { "longitude": lon, "latitude": lat, "distance": 5000 } }
+    let trxId = uuidv4();
+    var data = {"operation": "get_locations_nearby", "transaction_id": trxId, "data": { "longitude": lon, "latitude": lat, "distance": 5000 } }
 
     socket.send(JSON.stringify(data));
 

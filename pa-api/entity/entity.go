@@ -72,7 +72,6 @@ type Location struct {
 }
 
 type SocketMessage struct {
-	ClientId      string      `json:"client_id"`
 	Operation     string      `json:"operation"`
 	TransactionId string      `json:"transaction_id"`
 	Data          interface{} `json:"data"`

@@ -38,7 +38,7 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 		panic(err)
 	}
 
-	client := &SocketClient{conn: &SocketConnection{connection: connection}, send: make(chan []byte, 256), user: user}
+	client := &SocketClient{conn: &SocketConnection{connection: connection}, user: user}
 	hub.register <- client
 
 	writer := &kafka.Writer{
@@ -68,7 +68,7 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 		}
 
 		clientKafkaRequestMessage := &entity.ClientKafkaRequestMessage{
-			ClientId:      socketMessage.ClientId,
+			ClientId:      user.Id,
 			ApiId:         fmt.Sprintf("%d", global.GetInstanceId()),
 			TransactionId: socketMessage.TransactionId,
 			Operation:     socketMessage.Operation,
@@ -100,10 +100,19 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 			}
 
 			if err != nil {
-				log.Fatalf("unexpected error %v", err)
+				log.Printf("unexpected error %v", err)
 			}
 			break
 		}
 
+	}
+}
+
+func (client *SocketClient) SendMessage(message []byte) {
+
+	err := client.conn.connection.WriteMessage(websocket.TextMessage, message)
+
+	if err != nil {
+		panic(err)
 	}
 }

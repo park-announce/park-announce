@@ -10,9 +10,6 @@ type SocketClient struct {
 	// The websocket connection.
 	conn *SocketConnection
 
-	// Buffered channel of outbound messages.
-	send chan []byte
-
 	user entity.User
 }
 
@@ -52,42 +49,22 @@ var (
 
 func NewSocketHub() *SocketHub {
 	return &SocketHub{
-		broadcast:  make(chan []byte),
-		register:   make(chan *SocketClient),
-		unregister: make(chan *SocketClient),
-		clients:    make(map[string]*SocketClient),
-	}
-}
-
-func (h *SocketHub) Broadcast() {
-
-	for {
-		select {
-
-		case message := <-h.broadcast:
-			for key, client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, key)
-				}
-			}
-		}
+		register: make(chan *SocketClient),
+		clients:  make(map[string]*SocketClient),
 	}
 }
 
 func (h *SocketHub) SendMessage(id string, message string) {
 
 	if client, ok := h.clients[id]; ok {
-		client.send <- []byte(message)
+		client.SendMessage([]byte(message))
 	}
 }
 
 func (h *SocketHub) SendMessageIfClientExist(id string, message []byte) bool {
 
 	if client, ok := h.clients[id]; ok {
-		client.send <- message
+		client.SendMessage(message)
 		return true
 	}
 	return false
@@ -98,20 +75,6 @@ func (h *SocketHub) IsClientExist(id string) bool {
 	_, ok := h.clients[id]
 
 	return ok
-}
-
-func (h *SocketHub) UnRegister() {
-
-	for {
-		select {
-
-		case client := <-h.unregister:
-			if _, ok := h.clients[client.user.Id]; ok {
-				delete(h.clients, client.user.Id)
-				close(client.send)
-			}
-		}
-	}
 }
 
 func (h *SocketHub) Register() {
