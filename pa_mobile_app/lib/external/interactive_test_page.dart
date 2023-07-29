@@ -1,5 +1,6 @@
+import 'dart:convert' as convert;
+
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pa_mobile_app/external/intective_flag.dart';
@@ -9,7 +10,10 @@ import 'package:pa_mobile_app/external/marker_layer.dart';
 import 'package:pa_mobile_app/external/options.dart';
 import 'package:pa_mobile_app/external/tile_layer.dart';
 import 'package:pa_mobile_app/external/widget.dart';
+import 'package:pa_mobile_app/models/socket_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class InteractiveTestPage extends StatefulWidget {
   const InteractiveTestPage({
@@ -23,10 +27,13 @@ class InteractiveTestPage extends StatefulWidget {
 }
 
 class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerProviderStateMixin {
+  late WebSocketChannel _channel;
+
   final MapController mapController = MapController();
   // Enable pinchZoom and doubleTapZoomBy by default
   int flags = InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom | InteractiveFlag.drag;
-  LatLng userLocation = const LatLng(41, 29);
+  LatLng userLocation = const LatLng(41.09322441408693, 28.998664108745555);
+  late List<Location> locations = [];
   static const _startedId = 'AnimatedMapController#MoveStarted';
   static const _inProgressId = 'AnimatedMapController#MoveInProgress';
   static const _finishedId = 'AnimatedMapController#MoveFinished';
@@ -34,7 +41,22 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      _getLocation().then((value) => {_setLocation(value)});
+      SharedPreferences.getInstance().then((value) {
+        _channel = WebSocketChannel.connect(Uri.parse('ws://192.168.0.100:8000/socket/connect?Authorization=${value.getString('Token')}'));
+        _getLocation().then((value) => {_setLocation(value)});
+        final SocketData data = SocketData(userLocation.longitude, userLocation.latitude, 5000, 10);
+        final SocketMessage message = SocketMessage('get_locations_nearby', '123e4567-e89b-12d3-a456-426655440000', data);
+        print(convert.jsonEncode(message));
+        _channel.sink.add(convert.jsonEncode(message));
+        _channel.stream.listen((event) {
+          final responseString = convert.jsonDecode(event as String) as Map<String, dynamic>;
+          final NearestLocationsResponse response = NearestLocationsResponse.fromJson(responseString);
+          print(responseString);
+          setState(() {
+            locations = response.data.locations;
+          });
+        });
+      });
     });
     super.initState();
   }
@@ -125,59 +147,51 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   @override
   Widget build(BuildContext context) {
     debugPrint('user location: ${userLocation.latitude} ${userLocation.longitude}');
-    return Column(
+    return Stack(
       children: [
-        Flexible(
-          child: FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              onMapEvent: onMapEvent,
-              initialCenter: const LatLng(41, 29),
-              initialZoom: 15,
-              interactionOptions: InteractionOptions(
-                flags: flags,
-              ),
+        FlutterMap(
+          mapController: mapController,
+          options: MapOptions(
+            onMapEvent: onMapEvent,
+            initialCenter: const LatLng(41, 29),
+            initialZoom: 15,
+            interactionOptions: InteractionOptions(
+              flags: flags,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'dev.fleaflet.flutter_map.example',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    width: 10,
-                    height: 10,
-                    point: userLocation,
-                    builder: (ctx) => const Icon(Icons.location_pin),
-                  ),
-                  Marker(
-                    width: 10,
-                    height: 10,
-                    point: const LatLng(41.09, 29.002),
-                    builder: (ctx) => const FaIcon(FontAwesomeIcons.squareParking),
-                  ),
-                  Marker(
-                    width: 10,
-                    height: 10,
-                    point: LatLng(userLocation.latitude + 0.01, userLocation.latitude + 0.001),
-                    builder: (ctx) => const FaIcon(FontAwesomeIcons.squareParking),
-                  ),
-                  Marker(
-                    width: 10,
-                    height: 10,
-                    point: LatLng(userLocation.latitude + 0.001, userLocation.latitude + 0.001),
-                    builder: (ctx) => GestureDetector(
-                        onTap: () {
-                          _openMap(41.09, 29.001);
-                        },
-                        child: const FaIcon(FontAwesomeIcons.squareParking)),
-                  ),
-                ],
-              )
-            ],
           ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'dev.fleaflet.flutter_map.example',
+            ),
+            MarkerLayer(
+              markers: _getMarkers(),
+            )
+          ],
         ),
+        Positioned(
+          bottom: 30,
+          child: Column(
+              children: locations.map((e) {
+            return Container(
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(color: Colors.grey),
+                width: MediaQuery.of(context).size.width,
+                child: GestureDetector(
+                  onTap: () {
+                    //_openMap(e.latitude!, e.longitude!);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(e.latitude!.toStringAsFixed(2)),
+                      Text(e.longitude!.toStringAsFixed(2)),
+                      Text(e.distanceTo!.toStringAsFixed(2)),
+                    ],
+                  ),
+                ));
+          }).toList()),
+        )
       ],
     );
   }
@@ -191,5 +205,16 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
     } else {
       throw 'Could not launch $mapSchema';
     }
+  }
+
+  List<Marker> _getMarkers() {
+    return locations.map((e) {
+      return Marker(
+        width: 10,
+        height: 10,
+        point: LatLng(e.latitude!, e.longitude!),
+        builder: (ctx) => const Icon(Icons.location_pin),
+      );
+    }).toList();
   }
 }

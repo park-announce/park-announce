@@ -3,13 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pa_mobile_app/firebase_options.dart';
 import 'package:pa_mobile_app/login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  SharedPreferences.getInstance().then((value) {
+    value.remove('Email');
+    value.remove('IdToken');
+    value.remove('Name');
+    runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatefulWidget {

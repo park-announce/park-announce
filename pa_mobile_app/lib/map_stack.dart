@@ -16,7 +16,7 @@ class MapStack extends StatelessWidget {
           top: 30,
           child: _getTopButtons(context),
         ),
-        Positioned(
+        /*Positioned(
           bottom: 30,
           child: SizedBox(
             width: MediaQuery.of(context).size.width,
@@ -33,14 +33,14 @@ class MapStack extends StatelessWidget {
               ],
             ),
           ),
-        ),
+        ),*/
         Positioned(
           left: 10,
-          child: _getLeftbuttons(context),
+          child: Container(), // _getLeftbuttons(context),
         ),
         Positioned(
           right: 10,
-          child: _getRightButtons(context),
+          child: Container(), // _getRightButtons(context),
         )
       ],
     );
