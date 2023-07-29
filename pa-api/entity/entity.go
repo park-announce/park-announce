@@ -90,8 +90,3 @@ type ClientKafkaRequestMessage struct {
 	ApiId         string      `json:"api_id"`
 	Data          interface{} `json:"data"`
 }
-
-type SendSocketMessage struct {
-	ClientId string      `json:"client_id"`
-	Data     interface{} `json:"data"`
-}

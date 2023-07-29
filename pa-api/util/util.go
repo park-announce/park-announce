@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	uuid "github.com/satori/go.uuid"
+	"golang.org/x/exp/slices"
 )
 
 func CheckErr(err error) {
@@ -154,4 +155,13 @@ func FindGoogleOpenIDOAuthCertKey(certList []*entity.GoogleOpenIDOAuthCertKey, j
 		}
 	}
 	return foundCert
+}
+
+func IsOneOf(list []string, item string) (error, bool) {
+
+	if !slices.Contains(list, item) {
+		return types.NewBusinessException("invalid client_type", "exp.util.not_in_list"), false
+	}
+
+	return nil, true
 }

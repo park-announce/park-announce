@@ -18,8 +18,9 @@ const markerSource = new sourceVector();
 
 
 let socket;
-axios.post('http://localhost:8000/google/oauth2/code', {
-    "token": window.localStorage.getItem("googleToken")
+axios.post('http://localhost:8000/google/oauth2/token', {
+    "token": window.localStorage.getItem("googleToken"),
+    "client_type":"web"
 }).then(response => {
     const paToken = response.data.token;
     socket = new WebSocket(`ws://localhost:8000/socket/connect?Authorization=${paToken}`);

@@ -10,9 +10,11 @@ services:
       - kafka      
     environment:
       - PA_API_JWT_KEY=hdRZ5qVg3Eeiy8a6bgosxw
-      - PA_API_GOOGLE_CLIENT_ID=411985926318-ld5o23m1ldge5tmj56epbcdab6v5k6gv.apps.googleusercontent.com
-      - PA_API_GOOGLE_CLIENT_SECRET=Xw_i4t_alFdIfBSnMD5pk1_Y
-      - PA_API_GOOGLE_REDIRECT_URI=http://localhost:5173
+      - PA_API_WEB_GOOGLE_CLIENT_ID=411985926318-emhk771uorc6g8j86cm8ud7elk8408k2.apps.googleusercontent.com
+      - PA_API_WEB_GOOGLE_CLIENT_SECRET=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
+      - PA_API_WEB_GOOGLE_REDIRECT_URI=http://localhost:5173
+      - PA_API_IOS_GOOGLE_CLIENT_ID=411985926318-ld5o23m1ldge5tmj56epbcdab6v5k6gv.apps.googleusercontent.com
+      - PA_API_ANDROID_GOOGLE_CLIENT_ID=
   service:
     container_name: service
     image: park-announce/pa-service

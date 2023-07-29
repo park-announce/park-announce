@@ -1,7 +1,8 @@
 package contract
 
 type GetGoogleOAuthTokenRequest struct {
-	Token string `json:"token"`
+	Token      string `json:"token"`
+	ClientType string `json:"client_type"`
 }
 
 type GetGoogleOAuthTokenResponse struct {

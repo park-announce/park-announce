@@ -9,6 +9,8 @@ require (
 	github.com/redis/go-redis/v9 v9.0.5
 )
 
+require golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691 // indirect
+
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

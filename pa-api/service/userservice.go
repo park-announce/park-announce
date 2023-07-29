@@ -13,18 +13,28 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-func (service *UserService) GetGoogleOAuthCodeResponse(code string) (*entity.Token, error) {
+var mobileClientTypes = []string{"ios", "android"}
+var webClientTypes = []string{"web"}
+var clientTypes = append(mobileClientTypes, webClientTypes...)
+
+var clientIds = map[string]string{"web": os.Getenv("PA_API_WEB_GOOGLE_CLIENT_ID"), "ios": os.Getenv("PA_API_IOS_GOOGLE_CLIENT_ID"), "android": os.Getenv("PA_API_ANDROID_GOOGLE_CLIENT_ID")}
+
+func (service *UserService) GetGoogleOAuthCodeResponse(code string, clientType string) (*entity.Token, error) {
 	var err error
 	var tokenstring string
 
+	err, valid := util.IsOneOf(webClientTypes, clientType)
+
+	if !valid {
+		return nil, types.NewBusinessException("google oauth2 client_type exception", "exp.google.oauth2.clint_type")
+	}
+
 	data := url.Values{}
 	data.Add("code", code)
-	data.Add("client_id", os.Getenv("PA_API_GOOGLE_CLIENT_ID"))
-	data.Add("client_secret", os.Getenv("PA_API_GOOGLE_CLIENT_SECRET"))
-	data.Add("redirect_uri", os.Getenv("PA_API_GOOGLE_REDIRECT_URI"))
+	data.Add("client_id", os.Getenv("PA_API_WEB_GOOGLE_CLIENT_ID"))
+	data.Add("client_secret", os.Getenv("PA_API_WEB_GOOGLE_CLIENT_SECRET"))
+	data.Add("redirect_uri", os.Getenv("PA_API_WEB_GOOGLE_REDIRECT_URI"))
 	data.Add("grant_type", "authorization_code")
-
-	fmt.Println("data : %v", data)
 
 	googleTokenResponse := &contract.GetGoogleOAuthTokenResponse{}
 	err = service.httpClient.PostUrlEncoded("https://www.googleapis.com/oauth2/v4/token", data).EndStruct(googleTokenResponse)
@@ -47,9 +57,8 @@ func (service *UserService) GetGoogleOAuthCodeResponse(code string) (*entity.Tok
 		return []byte(key), nil
 	})
 
-	if err != nil {
-		fmt.Println("err -> ", err.Error())
-		return nil, types.NewBusinessException("google oauth2 token exception", "exp.google.oauth2.token")
+	if user.Audience != clientIds[clientType] {
+		return nil, types.NewBusinessException("google oauth2 aud exception", "exp.google.oauth2.aud")
 	}
 
 	// Embed User information to `token`
@@ -73,9 +82,15 @@ func (service *UserService) GetGoogleOAuthCodeResponse(code string) (*entity.Tok
 	return tokenData, err
 }
 
-func (service *UserService) GetGoogleOAuthTokenResponse(idToken string) (*entity.Token, error) {
+func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientType string) (*entity.Token, error) {
 	var err error
 	var tokenstring string
+
+	err, valid := util.IsOneOf(clientTypes, clientType)
+
+	if !valid {
+		return nil, types.NewBusinessException("google oauth2 client_type exception", "exp.google.oauth2.clint_type")
+	}
 
 	user := entity.GoogleUser{}
 
@@ -90,8 +105,8 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string) (*entity
 		return []byte(key), nil
 	})
 
-	if user.Audience != os.Getenv("PA_API_GOOGLE_CLIENT_ID") {
-		return nil, types.NewBusinessException("google oauth2 token exception", "exp.google.oauth2.token")
+	if user.Audience != clientIds[clientType] {
+		return nil, types.NewBusinessException("google oauth2 aud exception", "exp.google.oauth2.aud")
 	}
 
 	// Embed User information to `token`

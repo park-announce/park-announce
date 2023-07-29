@@ -23,7 +23,7 @@ func (handler UserHandler) HandleOAuth2GoogleCode(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&request); err == nil {
 
-		response, err := handler.userService.GetGoogleOAuthCodeResponse(request.Token)
+		response, err := handler.userService.GetGoogleOAuthCodeResponse(request.Token, request.ClientType)
 		util.CheckErr(err)
 		ctx.JSON(http.StatusOK, response)
 	} else {
@@ -46,7 +46,7 @@ func (handler UserHandler) HandleOAuth2GoogleToken(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&request); err == nil {
 
-		response, err := handler.userService.GetGoogleOAuthTokenResponse(request.Token)
+		response, err := handler.userService.GetGoogleOAuthTokenResponse(request.Token, request.ClientType)
 		util.CheckErr(err)
 		ctx.JSON(http.StatusOK, response)
 	} else {
