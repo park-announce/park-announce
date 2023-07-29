@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"os/signal"
 	"sync"
@@ -15,6 +16,7 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	kafka "github.com/segmentio/kafka-go"
 )
@@ -69,7 +71,7 @@ type FindNearbyLocationRequest struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
 	Distance  float64 `json:"distance"`
-	Count     float64 `json:"count"`
+	Count     int32   `json:"count"`
 }
 
 type FindNearbyLocationResponse struct {
@@ -126,6 +128,10 @@ func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{})
 		return err, nil
 	}
 
+	findNearbyLocationRequest.Count = int32(math.Min(float64(findNearbyLocationRequest.Count), float64(maxSearchResult)))
+
+	findNearbyLocationRequest.Distance = math.Min(float64(findNearbyLocationRequest.Distance), float64(maxDistance))
+
 	rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude, ST_Distance(geog,ST_MakePoint($2, $3)::geography) as distance_to FROM pa_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4) order by distance_to asc limit $5", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance, findNearbyLocationRequest.Count)
 
 	if err != nil {
@@ -142,9 +148,20 @@ func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{})
 			log.Printf("unexpected error %v", err)
 		}
 		locations = append(locations, location)
+		/*
+			//check is this location checked out for reservervation for a spesific duration
+			result, _ := rdb.SetNX(fmt.Sprintf("reservation-lock-%s", location.Id), clientKafkaRequestMessage.ClientId, reservationLockDurationTime).Result()
+
+			if result {
+				//if not checkout for rezervation, add to list
+				locations = append(locations, location)
+			}
+
+		*/
+
 	}
 
-	return nil, &FindNearbyLocationResponse{Duration: 15, Locations: locations}
+	return nil, &FindNearbyLocationResponse{Duration: reservationLockDurationSeconds, Locations: locations}
 }
 
 type CreateParkLocationOperation struct{}
@@ -206,6 +223,21 @@ func (o *ReserveParkLocationOperation) Do(data interface{}) (error, interface{})
 		log.Printf("unexpected error %v", err)
 		return err, nil
 	}
+
+	/*
+		//check is location reserved for this user
+		reservedUserId, err := rdb.Get(fmt.Sprintf("reservation-lock-%s", reserveParkLocationRequest.Id)).Result()
+
+		if err != nil {
+			log.Printf("unexpected error %v", err)
+			return err, nil
+		}
+
+		if reservedUserId != clientKafkaRequestMessage.ClientId {
+			return nil, &ErrorMessage{Code: "ui.messages.reservation.location_already_reserved_for_another_user", Message: "location already reserved for other user"}
+		}
+
+	*/
 
 	var count int64 = 0
 	db.QueryRow("select count(*) from pa_locations where status = $1 and id = $2;", 1, reserveParkLocationRequest.Id).Scan(&count)
@@ -316,6 +348,11 @@ func (o *ScheduleParkLocationAvailabilityOperation) Do(data interface{}) (error,
 var operations map[string]IOperation = make(map[string]IOperation, 0)
 
 var db *sql.DB
+var rdb *redis.Client
+var reservationLockDurationSeconds int32 = 15
+var reservationLockDurationTime time.Duration = time.Second * 15
+var maxSearchResult int32 = 3
+var maxDistance float64 = 5000
 
 func main() {
 
@@ -337,6 +374,12 @@ func main() {
 			log.Println("failed to close db:", err)
 		}
 	}()
+
+	rdb = redis.NewClient(&redis.Options{
+		Addr:     "redis:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 
 	kafkaConsumerQuit := make(chan os.Signal, 1)
 	signal.Notify(kafkaConsumerQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)

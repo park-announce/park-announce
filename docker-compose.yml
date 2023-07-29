@@ -20,7 +20,8 @@ services:
     image: park-announce/pa-service
     depends_on:
       - db
-      - kafka      
+      - kafka    
+      - redis  
   web:
     container_name: web
     image: park-announce/pa-web
