@@ -44,7 +44,7 @@ mapping["get_locations_nearby"] = function (message) {
 
 
 
-    message.data.forEach(function (item, index) {
+    message.data.locations.forEach(function (item, index) {
         addMarker(item.longitude, item.latitude);
 
     });
@@ -142,7 +142,7 @@ map.on('dblclick', function (event) {
     var lat = lonLat[1];
 
     let trxId = uuidv4();
-    var data = {"operation": "get_locations_nearby", "transaction_id": trxId, "data": { "longitude": lon, "latitude": lat, "distance": 5000 } }
+    var data = {"operation": "get_locations_nearby", "transaction_id": trxId, "data": { "longitude": lon, "latitude": lat, "distance": 5000,"count":10 } }
 
     socket.send(JSON.stringify(data));
 
@@ -152,4 +152,26 @@ function parseJwt(token) {
     var base64Url = token.split('.')[1];
     var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     return JSON.parse(window.atob(base64));
+}
+
+function createParkLocation(lon,lat){
+    let trxId = uuidv4();
+    var data = {"operation": "create_park_location", "transaction_id": trxId, "data": { "longitude": lon, "latitude": lat } };
+    socket.send(JSON.stringify(data));
+}
+
+function reserveParkLocation(){
+    let trxId = uuidv4();
+
+    var data = {"operation":"reserve_park_location","transaction_id":trxId,"data":{"id":"60896070-24e3-4822-817f-18e2b3f7268d"}};
+    socket.send(JSON.stringify(data));
+}
+
+function scheduleParkLocationAvailability(on,lat){
+    let trxId = uuidv4();    
+    //var data = {"operation":"schedule_park_location_availability","transaction_id":trxId,"data":{"longitude": lon, "latitude": lat,"schedule_type":0,"scheduled_time":Date.now()+3600}};
+
+    var data = {"operation":"schedule_park_location_availability","transaction_id":trxId,"data":{"id":"60896070-24e3-4822-817f-18e2b3f7268d","schedule_type":1,"scheduled_time":Date.now()+3600}};
+
+    socket.send(JSON.stringify(data));
 }

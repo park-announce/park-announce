@@ -190,10 +190,25 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 
 			err = json.Unmarshal(m.Value, &clientKafkaResponseMessage)
 			if err != nil {
+				log.Println("error :", err)
 				break
 			}
 
-			if !hub.SendMessageIfClientExist(clientKafkaResponseMessage.ClientId, m.Value) {
+			var clientSocketResponseMessage entity.ClientSocketResponseMessage
+			err = json.Unmarshal(m.Value, &clientSocketResponseMessage)
+			if err != nil {
+				log.Println("error :", err)
+				break
+			}
+
+			message, err := json.Marshal(clientSocketResponseMessage)
+
+			if err != nil {
+				log.Println("error :", err)
+				break
+			}
+
+			if !hub.SendMessageIfClientExist(clientKafkaResponseMessage.ClientId, message) {
 				//produce this message to dead_letter_message topic
 				log.Printf("socket connection not found with id : %s, message is sending to dead_letter_messages topic", clientKafkaResponseMessage.ClientId)
 				messages := []kafka.Message{
@@ -271,7 +286,21 @@ func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain
 				break
 			}
 
-			hub.SendMessageIfClientExist(clientKafkaResponseMessage.ClientId, m.Value)
+			var clientSocketResponseMessage entity.ClientSocketResponseMessage
+			err = json.Unmarshal(m.Value, &clientSocketResponseMessage)
+			if err != nil {
+				log.Println("error :", err)
+				break
+			}
+
+			message, err := json.Marshal(clientSocketResponseMessage)
+
+			if err != nil {
+				log.Println("error :", err)
+				break
+			}
+
+			hub.SendMessageIfClientExist(clientKafkaResponseMessage.ClientId, message)
 
 			reader.CommitMessages(context.Background(), m)
 		}

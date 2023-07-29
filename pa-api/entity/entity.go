@@ -90,3 +90,9 @@ type ClientKafkaRequestMessage struct {
 	ApiId         string      `json:"api_id"`
 	Data          interface{} `json:"data"`
 }
+
+type ClientSocketResponseMessage struct {
+	Operation     string      `json:"operation"`
+	TransactionId string      `json:"transaction_id"`
+	Data          interface{} `json:"data"`
+}
