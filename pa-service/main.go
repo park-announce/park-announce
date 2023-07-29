@@ -57,6 +57,14 @@ type LocationWithDistance struct {
 	Location
 }
 
+type LocationEntity struct {
+	Id             string         `json:"id"`
+	OwnerId        string         `json:"owner_id"`
+	AssignedUserId sql.NullString `json:"assigned_user_id,omitempty"`
+	Status         int16          `json:"status"`
+	Location
+}
+
 type FindNearbyLocationRequest struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
@@ -247,10 +255,26 @@ func (o *ScheduleParkLocationAvailabilityOperation) Do(data interface{}) (error,
 	}
 
 	if scheduleParkLocationAvailabiltyRequest.ScheduleType == ById {
-		var count int64 = 0
-		db.QueryRow("select count(*) from pa_locations where status = $1 and id = $2;", 2, scheduleParkLocationAvailabiltyRequest.Id).Scan(&count)
+		var location LocationEntity
+		row := db.QueryRow("select status,assigned_user_id from pa_locations where id = $1;", scheduleParkLocationAvailabiltyRequest.Id)
+		err := row.Err()
+		if err != nil {
+			log.Printf("unexpected error %v", err)
+			return err, nil
+		}
 
-		if count > 0 {
+		err = row.Scan(&location.Status, &location.AssignedUserId)
+
+		if err != nil {
+			log.Printf("unexpected error %v", err)
+			return err, nil
+		}
+
+		if !location.AssignedUserId.Valid || location.AssignedUserId.String != clientKafkaRequestMessage.ClientId {
+			return nil, &ErrorMessage{Code: "ui.messages.reservation.invalid_schedule_location_availability_request", Message: "invalid schedule location availability request"}
+		}
+
+		if location.Status == 2 {
 			return nil, &ErrorMessage{Code: "ui.messages.reservation.location_already_scheduled", Message: "location already scheduled for availablity"}
 		}
 
@@ -298,7 +322,7 @@ func main() {
 	operations["get_locations_nearby"] = &FindLocationsNearbyOperation{}
 	operations["create_park_location"] = &CreateParkLocationOperation{}
 	operations["reserve_park_location"] = &ReserveParkLocationOperation{}
-	operations["schedule_park_availability"] = &ScheduleParkLocationAvailabilityOperation{}
+	operations["schedule_park_location_availability"] = &ScheduleParkLocationAvailabilityOperation{}
 
 	//initialize postgres client
 	connStr := "postgres://park_announce:PosgresDb1591*@db/padb?sslmode=disable"
