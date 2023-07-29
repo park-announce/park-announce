@@ -1,6 +1,10 @@
 package handler
 
 import (
+	"fmt"
+	"log"
+	"runtime/debug"
+
 	"github.com/gin-gonic/gin"
 	"github.com/park-announce/pa-api/entity"
 	"github.com/park-announce/pa-api/service"
@@ -12,6 +16,7 @@ func (handler SocketHandler) HandleSocketConnection(ctx *gin.Context, hub *servi
 
 	defer func() {
 		if err := recover(); err != nil {
+			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
 			util.HandleErr(ctx, err)
 		}
 	}()

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -28,8 +29,8 @@ type BackgroundOperation struct {
 
 func (backgroundOperation *BackgroundOperation) GetGlobalInstanceId(wgMain *sync.WaitGroup, redis *redis.Client, redisLockObtained chan bool, redisLockQuit chan os.Signal, redisLockName chan string) {
 	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in redis go rouitine", r)
+		if err := recover(); err != nil {
+			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
 		}
 	}()
 	defer func() {
@@ -85,8 +86,8 @@ func (backgroundOperation *BackgroundOperation) GetGlobalInstanceId(wgMain *sync
 
 func (backgroundOperation *BackgroundOperation) RedisHeartBeat(wgMain *sync.WaitGroup, redis *redis.Client, redisHeartBeatQuit chan os.Signal, lockName string) {
 	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in redis heartbeat goroutine", r)
+		if err := recover(); err != nil {
+			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
 		}
 	}()
 	defer func() {
@@ -125,8 +126,9 @@ func (backgroundOperation *BackgroundOperation) StartServer(wgMain *sync.WaitGro
 	go func() {
 
 		defer func() {
-			if r := recover(); r != nil {
-				fmt.Println("Recovered in http go routine", r)
+			if err := recover(); err != nil {
+
+				log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
 			}
 		}()
 
@@ -140,8 +142,8 @@ func (backgroundOperation *BackgroundOperation) StartServer(wgMain *sync.WaitGro
 
 func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sync.WaitGroup, hub *service.SocketHub, kafkaConsumerQuit chan os.Signal) {
 	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in http go routine", r)
+		if err := recover(); err != nil {
+			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
 		}
 	}()
 
@@ -246,8 +248,8 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 
 func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain *sync.WaitGroup, hub *service.SocketHub, kafkaConsumerQuit chan os.Signal) {
 	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in http go routine", r)
+		if err := recover(); err != nil {
+			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
 		}
 	}()
 

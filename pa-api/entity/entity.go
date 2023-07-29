@@ -96,3 +96,9 @@ type ClientSocketResponseMessage struct {
 	TransactionId string      `json:"transaction_id"`
 	Data          interface{} `json:"data"`
 }
+
+type IEntity interface {
+	Do()
+}
+
+func (user User) Do() {}

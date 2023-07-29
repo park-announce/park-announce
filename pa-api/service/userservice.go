@@ -128,3 +128,66 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 
 	return tokenData, err
 }
+
+func (service *UserService) GetGoogleOAuthRegisterResponse(idToken string, clientType string) (*entity.Token, error) {
+	var err error
+	var tokenstring string
+
+	err, valid := util.IsOneOf(clientTypes, clientType)
+
+	if !valid {
+		return nil, types.NewBusinessException("google oauth2 client_type exception", "exp.google.oauth2.clint_type")
+	}
+
+	user := entity.GoogleUser{}
+
+	jwt.ParseWithClaims(idToken, &user, func(token *jwt.Token) (interface{}, error) {
+
+		key, err := util.GetGoogleIdTokenSignKey(service.httpClient, idToken)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return []byte(key), nil
+	})
+
+	if user.Audience != clientIds[clientType] {
+		return nil, types.NewBusinessException("google oauth2 aud exception", "exp.google.oauth2.aud")
+	}
+
+	//check is user already register
+
+	dbUser, err := service.userRepository.GetByMail("User", user.Email, "select * from pa_users where email = $1")
+
+	if err != nil {
+		return nil, types.NewBusinessException("db exception", "exp.db.query.error")
+	}
+
+	if dbUser == nil {
+		_, err := service.userRepository.Insert("insert into pa_users(id,email) values($1,$2)", util.GenerateGuid(), user.Email)
+
+		if err != nil {
+			return nil, types.NewBusinessException("db exception", "exp.db.query.error")
+		}
+	}
+
+	// Embed User information to `token`
+	jwtToken := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), &entity.User{
+		Id:        user.Id,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Picture:   user.Picture,
+	})
+	// token -> string. Only server knows this secret (foobar).
+	tokenstring, err = jwtToken.SignedString([]byte(os.Getenv("PA_API_JWT_KEY")))
+
+	if err != nil {
+		return nil, types.NewBusinessException("google oauth2 token exception", "exp.google.oauth2.token")
+	}
+
+	tokenData := &entity.Token{AccessToken: tokenstring}
+
+	return tokenData, err
+}
