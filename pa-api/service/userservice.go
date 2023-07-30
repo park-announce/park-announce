@@ -109,14 +109,29 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 		return nil, types.NewBusinessException("google oauth2 aud exception", "exp.google.oauth2.aud")
 	}
 
+	//check is user already register
+
+	dbUser, err := service.userRepository.GetByMail("User", user.Email, "select id from pa_users where email = $1")
+
+	if err != nil {
+		return nil, types.NewBusinessException("db exception", "exp.db.query.error")
+	}
+
+	if dbUser == nil {
+		return nil, types.NewBusinessException("user not found exception", "exp.user.notfound")
+	}
+
+	userId := dbUser.(*entity.User).Id
+
 	// Embed User information to `token`
 	jwtToken := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), &entity.User{
-		Id:        user.Id,
+		Id:        userId,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
 		Picture:   user.Picture,
 	})
+
 	// token -> string. Only server knows this secret (foobar).
 	tokenstring, err = jwtToken.SignedString([]byte(os.Getenv("PA_API_JWT_KEY")))
 
@@ -158,7 +173,7 @@ func (service *UserService) GetGoogleOAuthRegisterResponse(idToken string, clien
 
 	//check is user already register
 
-	dbUser, err := service.userRepository.GetByMail("User", user.Email, "select * from pa_users where email = $1")
+	dbUser, err := service.userRepository.GetByMail("User", user.Email, "select id from pa_users where email = $1")
 
 	if err != nil {
 		return nil, types.NewBusinessException("db exception", "exp.db.query.error")
@@ -172,7 +187,7 @@ func (service *UserService) GetGoogleOAuthRegisterResponse(idToken string, clien
 			return nil, types.NewBusinessException("db exception", "exp.db.query.error")
 		}
 	} else {
-		userId = dbUser.(entity.User).Id
+		userId = dbUser.(*entity.User).Id
 	}
 
 	// Embed User information to `token`

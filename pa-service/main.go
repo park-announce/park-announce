@@ -61,6 +61,11 @@ type LocationWithDistance struct {
 	Location
 }
 
+type LocationWithId struct {
+	Id string `json:"id"`
+	Location
+}
+
 type LocationEntity struct {
 	Id             string         `json:"id"`
 	OwnerId        string         `json:"owner_id"`
@@ -79,6 +84,10 @@ type FindNearbyLocationRequest struct {
 type FindNearbyLocationResponse struct {
 	Duration  int32                  `json:"duration"`
 	Locations []LocationWithDistance `json:"locations"`
+}
+
+type GetReservedParkLocationsResponse struct {
+	Locations []LocationWithId `json:"locations"`
 }
 
 type CreateParkLocationRequest struct {
@@ -347,6 +356,36 @@ func (o *ScheduleParkLocationAvailabilityOperation) Do(data interface{}) (error,
 
 }
 
+type GetReservedParkLocationsOperation struct {
+}
+
+func (o *GetReservedParkLocationsOperation) Do(data interface{}) (error, interface{}) {
+
+	clientKafkaRequestMessage := data.(ClientKafkaRequestMessage)
+
+	rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude from pa_locations where status = $1 and assigned_user_id = $2;", 1, clientKafkaRequestMessage.ClientId)
+
+	if err != nil {
+		log.Printf("unexpected error %v", err)
+		return err, nil
+	}
+
+	defer rows.Close()
+
+	var locations []LocationWithId
+	for rows.Next() {
+		var location LocationWithId
+		if err := rows.Scan(&location.Id, &location.Longitude, &location.Latitude); err != nil {
+			log.Printf("unexpected error %v", err)
+		}
+		locations = append(locations, location)
+
+	}
+
+	return nil, &GetReservedParkLocationsResponse{Locations: locations}
+
+}
+
 var operations map[string]IOperation = make(map[string]IOperation, 0)
 
 var db *sql.DB
@@ -362,6 +401,7 @@ func main() {
 	operations["create_park_location"] = &CreateParkLocationOperation{}
 	operations["reserve_park_location"] = &ReserveParkLocationOperation{}
 	operations["schedule_park_location_availability"] = &ScheduleParkLocationAvailabilityOperation{}
+	operations["get_reserved_park_locations"] = &GetReservedParkLocationsOperation{}
 
 	//initialize postgres client
 	connStr := "postgres://park_announce:PosgresDb1591*@db/padb?sslmode=disable"

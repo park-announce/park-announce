@@ -44,9 +44,37 @@ mapping["get_locations_nearby"] = function (message) {
 
     var fruits = document.querySelector('#locations');
 
+    var i, L = fruits.options.length - 1;
+   for(i = L; i >= 0; i--) {
+    fruits.remove(i);
+   }
+    
+
     message.data.locations.forEach(function (item, index) {
     var orange = document.createElement('option');
     orange.text = `lat : ${item.latitude}, lon: ${item.longitude}, distance_to : ${item.distance_to}` ;
+    orange.value = item.id;
+    fruits.add(orange);
+
+        addMarker(item.longitude, item.latitude);
+
+    });
+
+};
+
+mapping["get_reserved_park_locations"] = function (message) {
+
+    var fruits = document.querySelector('#locations');
+
+
+    var i, L = fruits.options.length - 1;
+   for(i = L; i >= 0; i--) {
+    fruits.remove(i);
+   }
+
+    message.data.locations.forEach(function (item, index) {
+    var orange = document.createElement('option');
+    orange.text = `lat : ${item.latitude}, lon: ${item.longitude}` ;
     orange.value = item.id;
     fruits.add(orange);
 
@@ -196,3 +224,16 @@ btnScheduleParkLocationAvailability.onclick = function(){
 
     socket.send(JSON.stringify(data));
 };
+
+var btnGetReservedParkLocation = document.querySelector('#btnGetReservedParkLocation');
+
+btnGetReservedParkLocation.onclick = function(){
+
+    let trxId = uuidv4();    
+    //var data = {"operation":"schedule_park_location_availability","transaction_id":trxId,"data":{"longitude": lon, "latitude": lat,"schedule_type":0,"scheduled_time":Date.now()+3600}};
+
+    var data = {"operation":"get_reserved_park_locations","transaction_id":trxId,"timeout":5,"data":null};
+
+    socket.send(JSON.stringify(data));
+};
+
