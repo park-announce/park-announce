@@ -3,7 +3,7 @@
 docker exec -it db psql -U park_announce -c "CREATE DATABASE IF NOT EXISTS padb;"
 docker exec -it db psql -U park_announce -c "CREATE ROLE postgres;"
 
-docker exec -it db psql -U park_announce padb -c "CREATE TABLE IF NOT EXISTS pa_users (id VARCHAR(20) PRIMARY KEY, email VARCHAR(100));"
+docker exec -it db psql -U park_announce padb -c "CREATE TABLE IF NOT EXISTS pa_users (id VARCHAR(50) PRIMARY KEY, email VARCHAR(200));"
 
 docker exec -it db psql -U park_announce padb -c "CREATE TABLE IF NOT EXISTS foo ( geog geography );"
 docker exec -it db psql -U park_announce padb -c "CREATE INDEX ON foo USING gist(geog);"
