@@ -151,7 +151,7 @@ map.on('dblclick', function (event) {
     var lat = lonLat[1];
 
     let trxId = uuidv4();
-    var data = {"operation": "get_locations_nearby", "transaction_id": trxId, "data": { "longitude": lon, "latitude": lat, "distance": 5000,"count":10 } }
+    var data = {"operation": "get_locations_nearby", "transaction_id": trxId, "timeout":5, "data": { "longitude": lon, "latitude": lat, "distance": 5000,"count":10 } }
 
     socket.send(JSON.stringify(data));
 
@@ -170,7 +170,7 @@ var btnCreateParkLocation = document.querySelector('#btnCreateParkLocation');
 btnCreateParkLocation.onclick = function(){
 
     let trxId = uuidv4();
-    var data = {"operation": "create_park_location", "transaction_id": trxId, "data": { "longitude": lastLon, "latitude": lastLat } };
+    var data = {"operation": "create_park_location", "transaction_id": trxId,"timeout":5, "data": { "longitude": lastLon, "latitude": lastLat } };
     socket.send(JSON.stringify(data));
 };
 
@@ -180,7 +180,7 @@ btnReserveParkLocation.onclick = function(){
 
     let trxId = uuidv4();
 
-    var data = {"operation":"reserve_park_location","transaction_id":trxId,"data":{"id":document.querySelector('#locations').value}};
+    var data = {"operation":"reserve_park_location","transaction_id":trxId,"timeout":5,"data":{"id":document.querySelector('#locations').value}};
     socket.send(JSON.stringify(data));
 };
 
@@ -192,7 +192,7 @@ btnScheduleParkLocationAvailability.onclick = function(){
     let trxId = uuidv4();    
     //var data = {"operation":"schedule_park_location_availability","transaction_id":trxId,"data":{"longitude": lon, "latitude": lat,"schedule_type":0,"scheduled_time":Date.now()+3600}};
 
-    var data = {"operation":"schedule_park_location_availability","transaction_id":trxId,"data":{"id":document.querySelector('#locations').value,"schedule_type":1,"scheduled_time":Date.now()+3600}};
+    var data = {"operation":"schedule_park_location_availability","transaction_id":trxId,"timeout":5,"data":{"id":document.querySelector('#locations').value,"schedule_type":1,"scheduled_time":Date.now()+3600}};
 
     socket.send(JSON.stringify(data));
 };

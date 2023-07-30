@@ -164,17 +164,20 @@ func (service *UserService) GetGoogleOAuthRegisterResponse(idToken string, clien
 		return nil, types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
+	var userId string = util.GenerateGuid()
 	if dbUser == nil {
-		_, err := service.userRepository.Insert("insert into pa_users(id,email) values($1,$2)", util.GenerateGuid(), user.Email)
+		_, err := service.userRepository.Insert("insert into pa_users(id,email) values($1,$2)", userId, user.Email)
 
 		if err != nil {
 			return nil, types.NewBusinessException("db exception", "exp.db.query.error")
 		}
+	} else {
+		userId = dbUser.(entity.User).Id
 	}
 
 	// Embed User information to `token`
 	jwtToken := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), &entity.User{
-		Id:        user.Id,
+		Id:        userId,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,

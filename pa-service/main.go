@@ -22,11 +22,13 @@ import (
 )
 
 type ClientKafkaRequestMessage struct {
-	ClientId      string      `json:"client_id"`
-	Operation     string      `json:"operation"`
-	TransactionId string      `json:"transaction_id"`
-	ApiId         string      `json:"api_id"`
-	Data          interface{} `json:"data"`
+	ClientId        string      `json:"client_id"`
+	Operation       string      `json:"operation"`
+	TransactionId   string      `json:"transaction_id"`
+	ApiId           string      `json:"api_id"`
+	TransactionTime int64       `json:"transaction_time"`
+	Timeout         int64       `json:"timeout"`
+	Data            interface{} `json:"data"`
 }
 
 type ClientKafkaResponseMessage struct {
@@ -443,6 +445,13 @@ func main() {
 				err = json.Unmarshal(m.Value, &clientKafkaRequestMessage)
 				if err != nil {
 					log.Printf("unexpected error %v", err)
+					break
+				}
+
+				//check is transaction timed out
+				now := time.Now().Unix()
+				if now > (clientKafkaRequestMessage.TransactionTime + clientKafkaRequestMessage.Timeout) {
+					log.Printf("transaction timed out. now : %d, transactiontime : %d, timeout : %d", now, clientKafkaRequestMessage.TransactionTime, clientKafkaRequestMessage.Timeout)
 					break
 				}
 

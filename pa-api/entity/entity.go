@@ -74,6 +74,7 @@ type Location struct {
 type SocketMessage struct {
 	Operation     string      `json:"operation"`
 	TransactionId string      `json:"transaction_id"`
+	Timeout       int64       `json:"timeout"`
 	Data          interface{} `json:"data"`
 }
 
@@ -84,11 +85,13 @@ type ClientKafkaResponseMessage struct {
 }
 
 type ClientKafkaRequestMessage struct {
-	ClientId      string      `json:"client_id"`
-	Operation     string      `json:"operation"`
-	TransactionId string      `json:"transaction_id"`
-	ApiId         string      `json:"api_id"`
-	Data          interface{} `json:"data"`
+	ClientId        string      `json:"client_id"`
+	Operation       string      `json:"operation"`
+	TransactionId   string      `json:"transaction_id"`
+	ApiId           string      `json:"api_id"`
+	TransactionTime int64       `json:"transaction_time"`
+	Timeout         int64       `json:"timeout"`
+	Data            interface{} `json:"data"`
 }
 
 type ClientSocketResponseMessage struct {

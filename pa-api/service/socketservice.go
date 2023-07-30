@@ -68,11 +68,13 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 		}
 
 		clientKafkaRequestMessage := &entity.ClientKafkaRequestMessage{
-			ClientId:      user.Id,
-			ApiId:         fmt.Sprintf("%d", global.GetInstanceId()),
-			TransactionId: socketMessage.TransactionId,
-			Operation:     socketMessage.Operation,
-			Data:          socketMessage.Data,
+			ClientId:        user.Id,
+			ApiId:           fmt.Sprintf("%d", global.GetInstanceId()),
+			TransactionId:   socketMessage.TransactionId,
+			Operation:       socketMessage.Operation,
+			Data:            socketMessage.Data,
+			Timeout:         socketMessage.Timeout,
+			TransactionTime: time.Now().Unix(),
 		}
 
 		data, err := json.Marshal(clientKafkaRequestMessage)
