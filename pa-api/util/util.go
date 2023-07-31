@@ -160,7 +160,7 @@ func FindGoogleOpenIDOAuthCertKey(certList []*entity.GoogleOpenIDOAuthCertKey, j
 func IsOneOf(list []string, item string) (error, bool) {
 
 	if !slices.Contains(list, item) {
-		return types.NewBusinessException("invalid client_type", "exp.util.not_in_list"), false
+		return types.NewBusinessException("invalid item", "exp.util.not_in_list"), false
 	}
 
 	return nil, true

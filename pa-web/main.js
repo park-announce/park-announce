@@ -179,7 +179,7 @@ map.on('dblclick', function (event) {
     var lat = lonLat[1];
 
     let trxId = uuidv4();
-    var data = {"operation": "get_locations_nearby", "transaction_id": trxId, "timeout":5, "data": { "longitude": lon, "latitude": lat, "distance": 5000,"count":10 } }
+    var data = {"operation": "get_locations_nearby", "transaction_id": trxId, "timeout":5, "data": { "longitude": lon, "latitude": lat, "distance": 5000,"count":10,"location_types":[0,1,2],"vehicle_types":[1,2,3] } }
 
     socket.send(JSON.stringify(data));
 

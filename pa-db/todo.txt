@@ -12,3 +12,12 @@ SELECT * FROM foo WHERE ST_DWithin(geog, ST_MakePoint(583521.85, 4507077.86)::ge
 SELECT ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude FROM foo WHERE ST_DWithin(geog, ST_MakePoint(583521.85, 4507077.86)::geography, 10000)
 
 SELECT ST_AsText(geog) FROM foo
+
+--connect db container
+docker exec -it db bash
+--create dump of padb database and export it to dump.sql file
+pg_dump -U park_announce padb --schema-only > dump.sql
+
+--exit db container and cd /park-announce directory in host
+--run command below to copy dump file from container to host current directory
+docker cp db:/src/dump.sql $(pwd)/dump.sql

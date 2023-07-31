@@ -14,11 +14,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	kafka "github.com/segmentio/kafka-go"
+	"golang.org/x/exp/slices"
 )
 
 type ClientKafkaRequestMessage struct {
@@ -56,14 +58,25 @@ type Location struct {
 }
 
 type LocationWithDistance struct {
-	Id         string  `json:"id"`
-	DistanceTo float64 `json:"distance_to"`
+	Id                     string                `json:"id"`
+	DistanceTo             float64               `json:"distance_to"`
+	LocationType           LocationType          `json:"location_type"`
+	AvailableLocationCount int32                 `json:"available_location_count"`
+	CorporationId          string                `json:"corporation_id"`
+	Prices                 []LocationPriceEntity `json:"prices"`
 	Location
 }
 
 type LocationWithId struct {
 	Id string `json:"id"`
 	Location
+}
+
+type LocationPriceEntity struct {
+	Id               string `json:"id"`
+	Price            string `json:"price"`
+	Currency         string `json:"currency"`
+	PriceDescription string `json:"price_description"`
 }
 
 type LocationEntity struct {
@@ -74,11 +87,31 @@ type LocationEntity struct {
 	Location
 }
 
+type LocationType int16
+
+const (
+	Public          LocationType = 0
+	PrivateProperty LocationType = 1
+	Corporation     LocationType = 2
+)
+
+type VehicleType int16
+
+const (
+	Sedan     VehicleType = 0
+	Hatchback VehicleType = 1
+	Pickup    VehicleType = 2
+	Suv       VehicleType = 3
+	Minibus   VehicleType = 4
+)
+
 type FindNearbyLocationRequest struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-	Distance  float64 `json:"distance"`
-	Count     int32   `json:"count"`
+	Latitude      float64        `json:"latitude"`
+	Longitude     float64        `json:"longitude"`
+	Distance      float64        `json:"distance"`
+	Count         int32          `json:"count"`
+	LocationTypes []LocationType `json:"location_types"`
+	VehicleTypes  []VehicleType  `json:"vehicle_types"`
 }
 
 type FindNearbyLocationResponse struct {
@@ -143,33 +176,89 @@ func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{})
 
 	findNearbyLocationRequest.Distance = math.Min(float64(findNearbyLocationRequest.Distance), float64(maxDistance))
 
-	rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude, ST_Distance(geog,ST_MakePoint($2, $3)::geography) as distance_to FROM pa_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4) order by distance_to asc limit $5", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance, findNearbyLocationRequest.Count)
+	var locations []LocationWithDistance
 
-	if err != nil {
-		log.Printf("unexpected error %v", err)
-		return err, nil
+	if slices.Contains(findNearbyLocationRequest.LocationTypes, Public) || slices.Contains(findNearbyLocationRequest.LocationTypes, PrivateProperty) {
+		rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude, ST_Distance(geog,ST_MakePoint($2, $3)::geography) as distance_to, location_type FROM pa_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4) and location_type = ANY ($5) order by distance_to asc limit $6", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance, pq.Array([]LocationType{Public, PrivateProperty}), findNearbyLocationRequest.Count)
+
+		if err != nil {
+			log.Printf("unexpected error %v", err)
+			return err, nil
+		}
+
+		defer rows.Close()
+
+		for rows.Next() {
+			var location LocationWithDistance
+			if err := rows.Scan(&location.Id, &location.Longitude, &location.Latitude, &location.DistanceTo, &location.LocationType); err != nil {
+				log.Printf("unexpected error %v", err)
+			}
+			location.AvailableLocationCount = 1
+			locations = append(locations, location)
+			/*
+				//check is this location checked out for reservervation for a spesific duration
+				result, _ := rdb.SetNX(fmt.Sprintf("reservation-lock-%s", location.Id), clientKafkaRequestMessage.ClientId, reservationLockDurationTime).Result()
+
+				if result {
+					//if not checkout for rezervation, add to list
+					locations = append(locations, location)
+				}
+
+			*/
+
+		}
 	}
 
-	defer rows.Close()
+	if slices.Contains(findNearbyLocationRequest.LocationTypes, Corporation) {
+		rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude, ST_Distance(geog,ST_MakePoint($2, $3)::geography) as distance_to, available_location_count, corporation_id FROM pa_corporation_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4) order by distance_to asc limit $5", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance, findNearbyLocationRequest.Count)
 
-	var locations []LocationWithDistance
-	for rows.Next() {
-		var location LocationWithDistance
-		if err := rows.Scan(&location.Id, &location.Longitude, &location.Latitude, &location.DistanceTo); err != nil {
+		if err != nil {
 			log.Printf("unexpected error %v", err)
+			return err, nil
 		}
-		locations = append(locations, location)
-		/*
-			//check is this location checked out for reservervation for a spesific duration
-			result, _ := rdb.SetNX(fmt.Sprintf("reservation-lock-%s", location.Id), clientKafkaRequestMessage.ClientId, reservationLockDurationTime).Result()
 
-			if result {
-				//if not checkout for rezervation, add to list
-				locations = append(locations, location)
+		defer rows.Close()
+
+		for rows.Next() {
+			var location LocationWithDistance
+			if err := rows.Scan(&location.Id, &location.Longitude, &location.Latitude, &location.DistanceTo, &location.AvailableLocationCount, &location.CorporationId); err != nil {
+				log.Printf("unexpected error %v", err)
+			}
+			location.LocationType = Corporation
+
+			rowsCorporationPrices, err := db.Query("SELECT id, price, currency, price_description from pa_corporation_prices where corporation_location_id = $1", location.Id)
+
+			if err != nil {
+				log.Printf("unexpected error %v", err)
+			} else {
+				defer rowsCorporationPrices.Close()
+
+				var locationPriceEntities []LocationPriceEntity
+
+				for rowsCorporationPrices.Next() {
+					var locationPriceEntity LocationPriceEntity
+					if err := rowsCorporationPrices.Scan(&locationPriceEntity.Id, &locationPriceEntity.Price, &locationPriceEntity.Currency, &locationPriceEntity.PriceDescription); err != nil {
+						log.Printf("unexpected error %v", err)
+					}
+					locationPriceEntities = append(locationPriceEntities, locationPriceEntity)
+				}
+				location.Prices = locationPriceEntities
 			}
 
-		*/
+			locations = append(locations, location)
 
+			/*
+				//check is this location checked out for reservervation for a spesific duration
+				result, _ := rdb.SetNX(fmt.Sprintf("reservation-lock-%s", location.Id), clientKafkaRequestMessage.ClientId, reservationLockDurationTime).Result()
+
+				if result {
+					//if not checkout for rezervation, add to list
+					locations = append(locations, location)
+				}
+
+			*/
+
+		}
 	}
 
 	return nil, &FindNearbyLocationResponse{Duration: reservationLockDurationSeconds, Locations: locations}
@@ -394,6 +483,9 @@ var reservationLockDurationSeconds int32 = 15
 var reservationLockDurationTime time.Duration = time.Second * 15
 var maxSearchResult int32 = 3
 var maxDistance float64 = 5000
+
+var vehicleTypes []VehicleType = []VehicleType{Sedan, Hatchback, Pickup, Suv, Minibus}
+var locationTypes []LocationType = []LocationType{Public, PrivateProperty, Corporation}
 
 func main() {
 
