@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:pa_mobile_app/components/pa_login_button.dart';
+import 'package:pa_mobile_app/external/interactive_test_page.dart';
 import 'package:pa_mobile_app/main_page.dart';
 import 'package:pa_mobile_app/models/api_error_response.dart';
 import 'package:pa_mobile_app/models/check_api_token_response.dart';
@@ -39,12 +40,27 @@ class _LoginPageState extends State<LoginPage> {
               final decoded = JwtDecoder.decode(apiTokenResponseBody.token);
               pref.setString('Email', decoded["email"].toString());
               pref.setString('Token', apiTokenResponseBody.token);
-            } else if (apiTokenResponseBody is ApiErrorResponse) {}
-            pref.setString('IdToken', value.idToken!);
-            pref.setString('Name', account.displayName!);
-            Navigator.of(context).push(
-              MaterialPageRoute<dynamic>(builder: (context) => const MainPage()),
-            );
+              pref.setString('IdToken', value.idToken!);
+              pref.setString('Name', account.displayName!);
+              Navigator.of(context).push(
+                MaterialPageRoute<dynamic>(builder: (context) => const InteractiveTestPage()),
+              );
+            } else if (apiTokenResponseBody is ApiErrorResponse && apiTokenResponseBody.code == 'exp.user.notfound') {
+              register(value.idToken!).then((apiTokenResponseBody) {
+                if (apiTokenResponseBody is CheckApiTokenResponse) {
+                  final decoded = JwtDecoder.decode(apiTokenResponseBody.token);
+                  pref.setString('Email', decoded["email"].toString());
+                  pref.setString('Token', apiTokenResponseBody.token);
+                  pref.setString('IdToken', value.idToken!);
+                  pref.setString('Name', account.displayName!);
+                  Navigator.of(context).push(
+                    MaterialPageRoute<dynamic>(builder: (context) => const InteractiveTestPage()),
+                  );
+                } else {
+                  //TODO:Hata ver
+                }
+              });
+            }
           });
         });
       });

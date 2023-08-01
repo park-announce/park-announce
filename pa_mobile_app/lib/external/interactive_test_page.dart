@@ -10,10 +10,13 @@ import 'package:pa_mobile_app/external/marker_layer.dart';
 import 'package:pa_mobile_app/external/options.dart';
 import 'package:pa_mobile_app/external/tile_layer.dart';
 import 'package:pa_mobile_app/external/widget.dart';
-import 'package:pa_mobile_app/models/socket_models.dart';
+import 'package:pa_mobile_app/models/socket_request_models.dart';
+import 'package:pa_mobile_app/models/socket_response_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+typedef ConvertJsonData = dynamic Function(Map<String, dynamic> json);
 
 class InteractiveTestPage extends StatefulWidget {
   const InteractiveTestPage({
@@ -37,28 +40,39 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   static const _startedId = 'AnimatedMapController#MoveStarted';
   static const _inProgressId = 'AnimatedMapController#MoveInProgress';
   static const _finishedId = 'AnimatedMapController#MoveFinished';
+  Map<String, ConvertJsonData> converters = Map<String, ConvertJsonData>();
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       SharedPreferences.getInstance().then((value) {
-        _channel = WebSocketChannel.connect(Uri.parse('ws://192.168.0.100:8000/socket/connect?Authorization=${value.getString('Token')}'));
-        _getLocation().then((value) => {_setLocation(value)});
-        final SocketData data = SocketData(userLocation.longitude, userLocation.latitude, 5000, 10);
-        final SocketMessage message = SocketMessage('get_locations_nearby', '123e4567-e89b-12d3-a456-426655440000', data);
-        print(convert.jsonEncode(message));
-        _channel.sink.add(convert.jsonEncode(message));
+        _channel = WebSocketChannel.connect(Uri.parse('ws://192.168.0.17:8000/socket/connect?Authorization=${value.getString('Token')}'));
         _channel.stream.listen((event) {
-          final responseString = convert.jsonDecode(event as String) as Map<String, dynamic>;
-          final NearestLocationsResponse response = NearestLocationsResponse.fromJson(responseString);
-          print(responseString);
-          setState(() {
-            locations = response.data.locations;
-          });
+          _processWebSocketMessage(event);
         });
+
+        _getLocation().then((location) => {_setLocation(location)});
+        final SocketRequestMessage<GetLocationNearbyRequest> message = SocketRequestMessage<GetLocationNearbyRequest>(
+            kGetLocationsNearby, GetLocationNearbyRequest(userLocation.longitude, userLocation.latitude, 5000, 10));
+
+        _sendSocketMessage(message);
       });
     });
     super.initState();
+    _getLocation().then((value) => {_setLocation(value)});
+
+    converters[kGetLocationsNearby] = (Map<String, dynamic> json) {
+      final NearestLocationsResponse response = NearestLocationsResponse.fromJson(json);
+      int index = 1;
+      response.locations.forEach(
+        (element) {
+          element.index = index++;
+        },
+      );
+      setState(() {
+        locations = response.locations;
+      });
+    };
   }
 
   void _setLocation(LatLng location) {
@@ -66,6 +80,27 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
       userLocation = location;
     });
     _animatedMapMove(location, 15);
+  }
+
+  void _processWebSocketMessage(dynamic event) {
+    final Map<String, dynamic> jsonData = convert.jsonDecode(event as String) as Map<String, dynamic>;
+
+    final callback = converters[jsonData['operation']] as ConvertJsonData;
+    callback(jsonData['data'] as Map<String, dynamic>);
+    print('Incoming socket message: $jsonData');
+
+    /*
+    final SocketMessage<NearestLocationsResponse> response =
+        SocketMessage<NearestLocationsResponse>.fromJson(jsonData, NearestLocationsResponse.fromJson(jsonData['data']));
+    
+    */
+  }
+
+  void _sendSocketMessage<T>(SocketRequestMessage<T> message) {
+    final String messageJson = convert.jsonEncode(message);
+    print('Outgoing socket message: $messageJson');
+
+    _channel.sink.add(messageJson);
   }
 
   void _animatedMapMove(LatLng destLocation, double destZoom) {
@@ -118,6 +153,11 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   }
 
   void onMapEvent(MapEvent mapEvent) {
+    if (mapEvent is MapEventTap) {
+      final SocketRequestMessage<CreateParkLocationRequest> message =
+          SocketRequestMessage(kCreateParkLocation, CreateParkLocationRequest(mapEvent.tapPosition.longitude, mapEvent.tapPosition.latitude, 30));
+      _sendSocketMessage(message);
+    }
     if (mapEvent is! MapEventMove && mapEvent is! MapEventRotate) {
       // do not flood console with move and rotate events
       //debugPrint(_eventName(mapEvent));
@@ -146,53 +186,135 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('user location: ${userLocation.latitude} ${userLocation.longitude}');
-    return Stack(
-      children: [
-        FlutterMap(
-          mapController: mapController,
-          options: MapOptions(
-            onMapEvent: onMapEvent,
-            initialCenter: const LatLng(41, 29),
-            initialZoom: 15,
-            interactionOptions: InteractionOptions(
-              flags: flags,
-            ),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'dev.fleaflet.flutter_map.example',
-            ),
-            MarkerLayer(
-              markers: _getMarkers(),
-            )
-          ],
-        ),
-        Positioned(
-          bottom: 30,
-          child: Column(
-              children: locations.map((e) {
-            return Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(color: Colors.grey),
-                width: MediaQuery.of(context).size.width,
-                child: GestureDetector(
-                  onTap: () {
-                    //_openMap(e.latitude!, e.longitude!);
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    print('user location: ${userLocation.latitude} ${userLocation.longitude}');
+    return Scaffold(
+      backgroundColor: const Color(0xFF132555),
+      body: FutureBuilder<UserInfo>(
+          future: _getDisplayName(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data != null) {
+              return SafeArea(
+                child: Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(e.latitude!.toStringAsFixed(2)),
-                      Text(e.longitude!.toStringAsFixed(2)),
-                      Text(e.distanceTo!.toStringAsFixed(2)),
+                      const Text('Welcome,', style: TextStyle(color: Colors.white)),
+                      Text(
+                        snapshot.data!.userName,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      Text(snapshot.data!.eMail, style: const TextStyle(color: Colors.white)),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            FlutterMap(
+                              mapController: mapController,
+                              options: MapOptions(
+                                onMapEvent: onMapEvent,
+                                initialCenter: const LatLng(41, 29),
+                                initialZoom: 15,
+                                interactionOptions: InteractionOptions(
+                                  flags: flags,
+                                ),
+                              ),
+                              children: [
+                                TileLayer(
+                                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                  userAgentPackageName: 'dev.fleaflet.flutter_map.example',
+                                ),
+                                MarkerLayer(
+                                  markers: _getMarkers(),
+                                )
+                              ],
+                            ),
+                            Positioned(
+                              top: 30,
+                              child: _getTopButtons(context),
+                            ),
+                            Positioned(
+                              bottom: 30,
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: Colors.greenAccent.shade700,
+                                      child: const Icon(
+                                        Icons.add,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 30,
+                              left: 15,
+                              right: 15,
+                              child: Column(
+                                  children: locations.map((e) {
+                                return Container(
+                                    padding: EdgeInsets.symmetric(vertical: 3, horizontal: 15),
+                                    decoration: const BoxDecoration(color: Colors.grey),
+                                    width: MediaQuery.of(context).size.width,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        //_openMap(e.latitude!, e.longitude!);
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor: Colors.green,
+                                            child: Text(
+                                              e.index.toString(),
+                                              style: const TextStyle(color: Colors.white),
+                                            ),
+                                          ),
+                                          Text('${e.distanceTo!.toStringAsFixed(2)}m'),
+                                          SizedBox(
+                                            width: 75,
+                                            child: MaterialButton(
+                                              onPressed: () {
+                                                print(e.latitude);
+                                                print(e.longitude);
+                                              },
+                                              color: Colors.green,
+                                              child: Text('Accept', style: TextStyle(fontSize: 10)),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 75,
+                                            child: MaterialButton(
+                                              onPressed: () {
+                                                locations = locations.where((a) => a.id != e.id).toList();
+                                                setState(() {});
+                                              },
+                                              color: Colors.red,
+                                              textColor: Colors.white,
+                                              child: Text('Reject', style: TextStyle(fontSize: 10)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ));
+                              }).toList()),
+                            )
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ));
-          }).toList()),
-        )
-      ],
+                ),
+              );
+            } else {
+              return const CircularProgressIndicator();
+            }
+          }),
     );
   }
 
@@ -210,11 +332,88 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   List<Marker> _getMarkers() {
     return locations.map((e) {
       return Marker(
-        width: 10,
-        height: 10,
+        width: 30,
+        height: 30,
         point: LatLng(e.latitude!, e.longitude!),
-        builder: (ctx) => const Icon(Icons.location_pin),
+        builder: (ctx) => CircleAvatar(
+          backgroundColor: Colors.green,
+          child: Text(
+            e.index.toString(),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       );
     }).toList();
   }
+
+  Widget _getTopButtons(BuildContext context) {
+    return Container();
+    return SizedBox(
+      width: MediaQuery.of(context).size.width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade500,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                      '750 Metre',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      '|',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Müsait park yeri: 20',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          /*
+          const SizedBox(height: 30),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: MediaQuery.of(context).size.width / 2,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(backgroundColor: Colors.green.shade400, foregroundColor: Colors.white),
+                  child: const Text('Bu bölgede ara'),
+                ),
+              ),
+            ],
+          )*/
+        ],
+      ),
+    );
+  }
+
+  Future<UserInfo> _getDisplayName() async {
+    final SharedPreferences pref = await SharedPreferences.getInstance();
+    return UserInfo(pref.getString('Name')!, pref.getString('IdToken')!, pref.getString('Email')!);
+  }
+}
+
+class UserInfo {
+  final String userName;
+  final String eMail;
+  final String idToken;
+
+  UserInfo(this.userName, this.idToken, this.eMail);
 }
