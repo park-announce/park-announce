@@ -237,3 +237,26 @@ btnGetReservedParkLocation.onclick = function(){
     socket.send(JSON.stringify(data));
 };
 
+var btnRegister = document.querySelector('#btnRegister');
+
+btnRegister.onclick = function(){
+
+    axios.post('http://localhost:8000/google/oauth2/register', {
+    "token": window.localStorage.getItem("googleToken"),
+    "client_type":"web"
+}).then(response => {
+    const paToken = response.data.token;
+    socket = new WebSocket(`ws://localhost:8000/socket/connect?Authorization=${paToken}`);
+    socket.onmessage = function (e) {
+        //console.log(e.data);
+
+        var message = JSON.parse(e.data);
+        var matchMapping = mapping[message.operation];
+
+        if (matchMapping != null && matchMapping != undefined) {
+            matchMapping(message);
+        }
+
+    };
+})
+};
