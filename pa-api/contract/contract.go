@@ -12,3 +12,8 @@ type GetGoogleOAuthTokenResponse struct {
 	ExpiresIn    int    `json:"expires_in"`
 	TokenType    string `json:"token_type"`
 }
+
+type CorporationLocationUpdateRequest struct {
+	Count         int32  `json:"count"`
+	CorporationId string `json:"corporation_id"`
+}

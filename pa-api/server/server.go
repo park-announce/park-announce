@@ -42,6 +42,12 @@ func NewServer(hub *service.SocketHub) *gin.Engine {
 		userHandler.HandleOAuth2GoogleRegister(ctx)
 	})
 
+	server.PUT("/corporation/locations/:id", func(ctx *gin.Context) {
+		dbClient := dbClientFactory.NewDBClient()
+		corporationHandler := handler.NewCorporationHandler(service.NewCorporationService(repository.NewCorporationRepository(dbClient)))
+		corporationHandler.HandleCorporationLocationUpdate(ctx)
+	})
+
 	return server
 }
 
