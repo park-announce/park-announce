@@ -106,7 +106,7 @@ const (
 	Minibus   VehicleType = 4
 )
 
-type FindNearbyLocationRequest struct {
+type GetLocationsNearbyRequest struct {
 	Latitude      float64        `json:"latitude"`
 	Longitude     float64        `json:"longitude"`
 	Distance      float64        `json:"distance"`
@@ -115,7 +115,7 @@ type FindNearbyLocationRequest struct {
 	VehicleTypes  []VehicleType  `json:"vehicle_types"`
 }
 
-type FindNearbyLocationResponse struct {
+type GetLocationsNearbyResponse struct {
 	Duration  int32                  `json:"duration"`
 	Locations []LocationWithDistance `json:"locations"`
 }
@@ -129,8 +129,16 @@ type CreateParkLocationRequest struct {
 	Longitude float64 `json:"longitude"`
 }
 
+type CreateParkLocationResponse struct {
+	Count  int64 `json:"count"`
+}
+
 type ReserveParkLocationRequest struct {
 	Id string `json:"id"`
+}
+
+type ReserveParkLocationResponse struct {
+	Count int64 `json:"count"`
 }
 
 type ScheduleParkLocationAvailabiltyRequest struct {
@@ -165,7 +173,7 @@ func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{})
 		return err, nil
 	}
 
-	var findNearbyLocationRequest FindNearbyLocationRequest
+	var findNearbyLocationRequest GetLocationsNearbyRequest
 
 	err = json.Unmarshal(findNearbyLocationRequestData, &findNearbyLocationRequest)
 	if err != nil {
@@ -177,7 +185,7 @@ func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{})
 
 	findNearbyLocationRequest.Distance = math.Min(float64(findNearbyLocationRequest.Distance), float64(maxDistance))
 
-	var locations []LocationWithDistance
+	var locations []LocationWithDistance = []LocationWithDistance{}
 
 	if slices.Contains(findNearbyLocationRequest.LocationTypes, Public) || slices.Contains(findNearbyLocationRequest.LocationTypes, PrivateProperty) {
 		rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude, ST_Distance(geog,ST_MakePoint($2, $3)::geography) as distance_to, location_type FROM pa_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4) and location_type = ANY ($5) order by distance_to asc limit $6", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance, pq.Array([]LocationType{Public, PrivateProperty}), findNearbyLocationRequest.Count)
@@ -262,7 +270,7 @@ func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{})
 		}
 	}
 
-	return nil, &FindNearbyLocationResponse{Duration: reservationLockDurationSeconds, Locations: locations}
+	return nil, &GetLocationsNearbyResponse{Duration: reservationLockDurationSeconds, Locations: locations}
 }
 
 type CreateParkLocationOperation struct{}
@@ -300,7 +308,7 @@ func (o *CreateParkLocationOperation) Do(data interface{}) (error, interface{}) 
 		return err, nil
 	}
 
-	return err, count
+	return err, &CreateParkLocationResponse{Count : count}
 
 }
 
@@ -361,7 +369,7 @@ func (o *ReserveParkLocationOperation) Do(data interface{}) (error, interface{})
 		return err, nil
 	}
 
-	return err, rowsAffected
+	return err, &ReserveParkLocationResponse{Count : rowsAffected}
 
 }
 
