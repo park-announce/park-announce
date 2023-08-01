@@ -21,3 +21,9 @@ pg_dump -U park_announce padb --schema-only > dump.sql
 --exit db container and cd /park-announce directory in host
 --run command below to copy dump file from container to host current directory
 docker cp db:/src/dump.sql $(pwd)/dump.sql
+
+--hostta yer alan dosyayi container'a kopyalamak icin
+docker cp dump.sql db:/src/dump.sql
+alinan dump'i restore etmek icin.
+psql -U park_announce padb < dump.sql
+
