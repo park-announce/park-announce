@@ -59,6 +59,7 @@ type Location struct {
 
 type LocationWithDistance struct {
 	Id                     string                `json:"id"`
+	Name                   string                `json:"name"`
 	DistanceTo             float64               `json:"distance_to"`
 	LocationType           LocationType          `json:"location_type"`
 	AvailableLocationCount int32                 `json:"available_location_count"`
@@ -210,7 +211,7 @@ func (o *FindLocationsNearbyOperation) Do(data interface{}) (error, interface{})
 	}
 
 	if slices.Contains(findNearbyLocationRequest.LocationTypes, Corporation) {
-		rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude, ST_Distance(geog,ST_MakePoint($2, $3)::geography) as distance_to, available_location_count, corporation_id FROM pa_corporation_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4) order by distance_to asc limit $5", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance, findNearbyLocationRequest.Count)
+		rows, err := db.Query("SELECT id, ST_X(geog::geometry) as longitude, ST_Y(geog::geometry) as latitude, ST_Distance(geog,ST_MakePoint($2, $3)::geography) as distance_to, available_location_count, corporation_id, name FROM pa_corporation_locations WHERE status = $1 and ST_DWithin(geog, ST_MakePoint($2, $3)::geography, $4) order by distance_to asc limit $5", 0, findNearbyLocationRequest.Longitude, findNearbyLocationRequest.Latitude, findNearbyLocationRequest.Distance, findNearbyLocationRequest.Count)
 
 		if err != nil {
 			log.Printf("unexpected error %v", err)
