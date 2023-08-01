@@ -43,7 +43,8 @@ CREATE TABLE public.pa_corporation_locations (
     corporation_id character varying(50) NOT NULL,
     geog public.geography NOT NULL,
     status smallint DEFAULT 1 NOT NULL,
-    available_location_count integer DEFAULT 0 NOT NULL
+    available_location_count integer DEFAULT 0 NOT NULL,
+    name character varying(100) NOT NULL
 );
 
 
