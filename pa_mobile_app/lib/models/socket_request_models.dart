@@ -31,7 +31,7 @@ class CreateParkLocationRequest {
   Map<String, dynamic> toJson() => {'longitude': longitude, 'latitude': latitude, 'duration': duration};
 }
 
-class GetLocationNearbyRequest {
+class GetLocationsNearbyRequest {
   final double longitude;
   final double latitude;
   final double distance;
@@ -39,7 +39,7 @@ class GetLocationNearbyRequest {
   final List<int> vehicleTypes = [0, 1, 2];
   final int count;
 
-  GetLocationNearbyRequest(this.longitude, this.latitude, this.distance, this.count);
+  GetLocationsNearbyRequest(this.longitude, this.latitude, this.distance, this.count);
   Map<String, dynamic> toJson() =>
       {'longitude': longitude, 'latitude': latitude, 'distance': distance, 'count': count, "location_types": locationTypes, "vehicle_types": vehicleTypes};
 }

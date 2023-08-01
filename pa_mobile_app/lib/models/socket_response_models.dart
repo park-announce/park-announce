@@ -14,6 +14,15 @@ class SocketResponseMessage<T> {
   }
 }
 
+class CreateParkLocationResponse {
+  final int count;
+
+  CreateParkLocationResponse(this.count);
+  factory CreateParkLocationResponse.fromJson(Map<String, dynamic> json) {
+    return CreateParkLocationResponse(json["count"] as int);
+  }
+}
+
 class NearestLocationsResponse {
   final int duration;
   final List<Location> locations;
@@ -48,5 +57,14 @@ class Location {
   factory Location.fromJson(Map<String, dynamic> json) {
     return Location(
         distanceTo: json["distance_to"] as double, id: json["id"] as String, latitude: json["latitude"] as double, longitude: json["longitude"] as double);
+  }
+}
+
+class ReserveParkLocationResponse {
+  final int count;
+
+  ReserveParkLocationResponse(this.count);
+  factory ReserveParkLocationResponse.fromJson(Map<String, dynamic> json) {
+    return ReserveParkLocationResponse(json["count"] as int);
   }
 }

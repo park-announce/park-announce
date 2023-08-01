@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pa_mobile_app/external/interactive_test_page.dart';
-import 'package:pa_mobile_app/map_stack.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatelessWidget {

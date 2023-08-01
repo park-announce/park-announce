@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-typedef ConvertJsonData = dynamic Function(Map<String, dynamic> json);
+typedef ConvertSocketResponseFunction = dynamic Function(Map<String, dynamic> json);
 
 class InteractiveTestPage extends StatefulWidget {
   const InteractiveTestPage({
@@ -40,7 +40,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   static const _startedId = 'AnimatedMapController#MoveStarted';
   static const _inProgressId = 'AnimatedMapController#MoveInProgress';
   static const _finishedId = 'AnimatedMapController#MoveFinished';
-  Map<String, ConvertJsonData> converters = Map<String, ConvertJsonData>();
+  Map<String, ConvertSocketResponseFunction> socketResponseProcessors = <String, ConvertSocketResponseFunction>{};
 
   @override
   void initState() {
@@ -52,8 +52,8 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
         });
 
         _getLocation().then((location) => {_setLocation(location)});
-        final SocketRequestMessage<GetLocationNearbyRequest> message = SocketRequestMessage<GetLocationNearbyRequest>(
-            kGetLocationsNearby, GetLocationNearbyRequest(userLocation.longitude, userLocation.latitude, 5000, 10));
+        final SocketRequestMessage<GetLocationsNearbyRequest> message = SocketRequestMessage<GetLocationsNearbyRequest>(
+            kGetLocationsNearby, GetLocationsNearbyRequest(userLocation.longitude, userLocation.latitude, 5000, 10));
 
         _sendSocketMessage(message);
       });
@@ -61,17 +61,23 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
     super.initState();
     _getLocation().then((value) => {_setLocation(value)});
 
-    converters[kGetLocationsNearby] = (Map<String, dynamic> json) {
+    socketResponseProcessors[kCreateParkLocation] = (Map<String, dynamic> json) {
+      final ReserveParkLocationResponse response = ReserveParkLocationResponse.fromJson(json);
+    };
+
+    socketResponseProcessors[kGetLocationsNearby] = (Map<String, dynamic> json) {
       final NearestLocationsResponse response = NearestLocationsResponse.fromJson(json);
       int index = 1;
-      response.locations.forEach(
-        (element) {
-          element.index = index++;
-        },
-      );
+      for (final element in response.locations) {
+        element.index = index++;
+      }
       setState(() {
         locations = response.locations;
       });
+    };
+
+    socketResponseProcessors[kReserveParkLocation] = (Map<String, dynamic> json) {
+      final CreateParkLocationResponse response = CreateParkLocationResponse.fromJson(json);
     };
   }
 
@@ -84,16 +90,9 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
 
   void _processWebSocketMessage(dynamic event) {
     final Map<String, dynamic> jsonData = convert.jsonDecode(event as String) as Map<String, dynamic>;
-
-    final callback = converters[jsonData['operation']] as ConvertJsonData;
-    callback(jsonData['data'] as Map<String, dynamic>);
     print('Incoming socket message: $jsonData');
-
-    /*
-    final SocketMessage<NearestLocationsResponse> response =
-        SocketMessage<NearestLocationsResponse>.fromJson(jsonData, NearestLocationsResponse.fromJson(jsonData['data']));
-    
-    */
+    final callback = socketResponseProcessors[jsonData['operation']] as ConvertSocketResponseFunction;
+    callback(jsonData['data'] as Map<String, dynamic>);
   }
 
   void _sendSocketMessage<T>(SocketRequestMessage<T> message) {
@@ -186,7 +185,6 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
 
   @override
   Widget build(BuildContext context) {
-    print('user location: ${userLocation.latitude} ${userLocation.longitude}');
     return Scaffold(
       backgroundColor: const Color(0xFF132555),
       body: FutureBuilder<UserInfo>(
@@ -280,11 +278,14 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
                                             width: 75,
                                             child: MaterialButton(
                                               onPressed: () {
+                                                final SocketRequestMessage<ReserveParkRequest> message =
+                                                    SocketRequestMessage<ReserveParkRequest>(kReserveParkLocation, ReserveParkRequest(e.id!));
+                                                _sendSocketMessage<ReserveParkRequest>(message);
                                                 print(e.latitude);
                                                 print(e.longitude);
                                               },
                                               color: Colors.green,
-                                              child: Text('Accept', style: TextStyle(fontSize: 10)),
+                                              child: const Text('Accept', style: TextStyle(fontSize: 10)),
                                             ),
                                           ),
                                           SizedBox(
@@ -296,7 +297,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
                                               },
                                               color: Colors.red,
                                               textColor: Colors.white,
-                                              child: Text('Reject', style: TextStyle(fontSize: 10)),
+                                              child: const Text('Reject', style: TextStyle(fontSize: 10)),
                                             ),
                                           ),
                                         ],
@@ -339,7 +340,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
           backgroundColor: Colors.green,
           child: Text(
             e.index.toString(),
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       );
