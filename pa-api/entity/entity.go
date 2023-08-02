@@ -13,6 +13,13 @@ type User struct {
 	jwt.StandardClaims
 }
 
+type CorporationUser struct {
+	Id            string `db:"id" json:"id"`
+	Password      string `db:"password" json:"password"`
+	Email         string `db:"email" json:"email"`
+	CorporationId string `db:"corpoaration_id" json:"corpoaration_id"`
+}
+
 type ResponseStatus struct {
 	IsSucccess bool   `json:"issuccess"`
 	Message    string `json:"message"`
@@ -104,4 +111,5 @@ type IEntity interface {
 	Do()
 }
 
-func (user User) Do() {}
+func (user User) Do()                       {}
+func (corporationUser CorporationUser) Do() {}

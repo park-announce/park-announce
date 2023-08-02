@@ -27,7 +27,72 @@ func (handler CorporationHandler) HandleCorporationLocationUpdate(ctx *gin.Conte
 	id := ctx.Param("id")
 
 	if err := ctx.ShouldBindJSON(&request); err == nil {
-		err := handler.corporationService.UpdateCorporationLocation(id, request.CorporationId, request.Count)
+
+		userData, isExist := ctx.Get("User")
+		var user entity.User
+		if !isExist {
+			panic(types.NewBusinessException("system exception", "exp.systemexception"))
+		}
+
+		user = userData.(entity.User)
+
+		err := handler.corporationService.UpdateCorporationLocation(user, id, request.CorporationId, request.Count)
+		util.CheckErr(err)
+		responseStatus := &entity.ResponseStatus{IsSucccess: true}
+		ctx.JSON(http.StatusOK, responseStatus)
+	} else {
+		exp := &types.ExceptionMessage{}
+		_ = json.Unmarshal([]byte(fmt.Sprint(err)), exp)
+		responseSatus := util.PrepareResponseStatusWithMessage(false, exp.Message, exp.Code, exp.Stack)
+		ctx.JSON(http.StatusBadRequest, responseSatus)
+	}
+}
+
+func (handler CorporationHandler) HandleCorporationToken(ctx *gin.Context) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
+			util.HandleErr(ctx, err)
+		}
+	}()
+
+	request := contract.CorporationOAuthTokenRequest{}
+
+	if err := ctx.ShouldBindJSON(&request); err == nil {
+		response, err := handler.corporationService.GetCorporationToken(request.Password, request.Email)
+		util.CheckErr(err)
+		ctx.JSON(http.StatusOK, response)
+	} else {
+		exp := &types.ExceptionMessage{}
+		_ = json.Unmarshal([]byte(fmt.Sprint(err)), exp)
+		responseSatus := util.PrepareResponseStatusWithMessage(false, exp.Message, exp.Code, exp.Stack)
+		ctx.JSON(http.StatusBadRequest, responseSatus)
+	}
+}
+
+func (handler CorporationHandler) HandleCorporationUserInsert(ctx *gin.Context) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
+			util.HandleErr(ctx, err)
+		}
+	}()
+
+	request := contract.CorporationUserInsertRequest{}
+
+	if err := ctx.ShouldBindJSON(&request); err == nil {
+
+		userData, isExist := ctx.Get("User")
+		var user entity.User
+		if !isExist {
+			panic(types.NewBusinessException("system exception", "exp.systemexception"))
+		}
+
+		user = userData.(entity.User)
+
+		err := handler.corporationService.InsertCorporationUser(user, request.Email, request.CorporationId)
 		util.CheckErr(err)
 		responseStatus := &entity.ResponseStatus{IsSucccess: true}
 		ctx.JSON(http.StatusOK, responseStatus)

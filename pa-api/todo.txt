@@ -82,3 +82,29 @@ cd /opt/kafka/bin
 
 --console producer
 ./kafka-console-producer.sh --bootstrap-server kafka:9092 --topic client_response_0
+
+
+
+--pa_corporation_users tablosuna kayit islemi oncesinde gereken token'i almak icin
+--bu istek oncesinde pa_corporation_users tablosunda resulguldibi@gmail.com ile bir kullanici yoksa eklemek icin asagidaki script calistirilir.
+
+INSERT INTO public.pa_corporation_users(id, status, email, password, corporation_id) VALUES ('932b7062-6435-4be1-83d1-b37f9d3f0333', 1, 'resulguldibi@gmail.com', '$2a$10$E8rQ34gcb/80PT.c1o.WXu22AEcf7BPTqHBsWWfmi1dw9bjNleSAu','932b7062-6435-4be1-83d1-b37f9d3f0448');
+	
+
+
+curl --location 'http://localhost:8000/corporation/token' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email": "resulguldibi@gmail.com",
+    "password": "1234"
+}'
+
+--pa_corporation_users tablosuna kayit eklemek icin (bir onceki adimda alinan token kullaniliyor)
+
+curl --location 'http://localhost:8000/corporation/users' \
+--header 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkzMmI3MDYyLTY0MzUtNGJlMS04M2QxLWIzN2Y5ZDNmMDMzMyIsImZuYW1lIjoiIiwibG5hbWUiOiIiLCJlbWFpbCI6InJlc3VsZ3VsZGliaUBnbWFpbC5jb20iLCJwaWN0dXJlIjoiIn0.Lw9S54iGC0E4h8uY_5E5DW6m8yTLpOpAhG6Yzk4FLT4' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email": "fatihberksoz@gmail.com",
+    "corporation_id": "932b7062-6435-4be1-83d1-b37f9d3f0448"
+}'

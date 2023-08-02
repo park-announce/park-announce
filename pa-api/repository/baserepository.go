@@ -161,7 +161,7 @@ func Query(db *sqlx.DB, query string, args ...interface{}) (result []map[string]
 		columnsData := make([]interface{}, len(columns))
 		columnsPointersData := make([]interface{}, len(columns))
 
-		for i, _ := range columnsData {
+		for i := range columnsData {
 			columnsPointersData[i] = &columnsData[i]
 		}
 

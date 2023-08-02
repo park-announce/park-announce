@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 
@@ -11,12 +12,14 @@ import (
 	"github.com/park-announce/pa-api/client"
 	"github.com/park-announce/pa-api/entity"
 	"github.com/park-announce/pa-api/types"
+	"github.com/sethvargo/go-password/password"
 
 	b64 "encoding/base64"
 
 	"github.com/gin-gonic/gin"
 
 	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/exp/slices"
 )
 
@@ -164,4 +167,27 @@ func IsOneOf(list []string, item string) (error, bool) {
 	}
 
 	return nil, true
+}
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func GeneratePasswordHash(pwd string) (string, error) {
+	res, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(res), nil
+}
+
+func GenerateSecurePassword(length, numDigits, numSymbols int, noUpper, allowRepeat bool) (string, error) {
+	res, err := password.Generate(length, numDigits, numSymbols, noUpper, allowRepeat)
+	if err != nil {
+		log.Println(err)
+		return "", nil
+	}
+	return res, nil
 }

@@ -48,6 +48,18 @@ func NewServer(hub *service.SocketHub) *gin.Engine {
 		corporationHandler.HandleCorporationLocationUpdate(ctx)
 	})
 
+	server.POST("/corporation/token", func(ctx *gin.Context) {
+		dbClient := dbClientFactory.NewDBClient()
+		corporationHandler := handler.NewCorporationHandler(service.NewCorporationService(repository.NewCorporationRepository(dbClient)))
+		corporationHandler.HandleCorporationToken(ctx)
+	})
+
+	server.POST("/corporation/users", func(ctx *gin.Context) {
+		dbClient := dbClientFactory.NewDBClient()
+		corporationHandler := handler.NewCorporationHandler(service.NewCorporationService(repository.NewCorporationRepository(dbClient)))
+		corporationHandler.HandleCorporationUserInsert(ctx)
+	})
+
 	return server
 }
 

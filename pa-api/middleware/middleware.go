@@ -15,10 +15,8 @@ import (
 func UseUserMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		authorization := c.Request.Header.Get("Authorization")
-
 		if isAuthorizationRequired(c.Request.URL.Path) && isAuthorizationEnabled() {
-
+			authorization := c.Request.Header.Get("Authorization")
 			if authorization == "" {
 				authorization = c.Request.URL.Query().Get("Authorization")
 			}
@@ -53,7 +51,7 @@ func UseUserMiddleware() gin.HandlerFunc {
 }
 
 func isAuthorizationRequired(path string) bool {
-	unAuthoriziedPaths := []string{"/signin", "/signup", "/google/oauth2/code", "/google/oauth2/register", "/google/oauth2/token", "/google/oauth2", "/favicon.ico", "/", "/play", "/multiplay", "/stage", "/css/", "/css/play.css", "/js", "/js/play.js", "/js/multiplay.js", "/images", "/images/happy.png", "/images/angry.png", "/images/angry2.png", "/images/history.png", "/images/star.png", "/images/timer.png", "/images/mark.png"}
+	unAuthoriziedPaths := []string{"/signin", "/signup", "/corporation/token", "/google/oauth2/code", "/google/oauth2/register", "/google/oauth2/token", "/google/oauth2", "/favicon.ico", "/", "/play", "/multiplay", "/stage", "/css/", "/css/play.css", "/js", "/js/play.js", "/js/multiplay.js", "/images", "/images/happy.png", "/images/angry.png", "/images/angry2.png", "/images/history.png", "/images/star.png", "/images/timer.png", "/images/mark.png"}
 	var isAuthorizationRequired bool = true
 	if unAuthoriziedPaths != nil && len(unAuthoriziedPaths) > 0 && path != "" {
 		for _, unAuthoriziedPath := range unAuthoriziedPaths {

@@ -17,3 +17,13 @@ type CorporationLocationUpdateRequest struct {
 	Count         int32  `json:"count"`
 	CorporationId string `json:"corporation_id"`
 }
+
+type CorporationOAuthTokenRequest struct {
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
+type CorporationUserInsertRequest struct {
+	Email         string `json:"email"`
+	CorporationId string `json:"corporation_id"`
+}
