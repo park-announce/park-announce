@@ -16,7 +16,7 @@ SELECT ST_AsText(geog) FROM foo
 --connect db container
 docker exec -it db bash
 --create dump of padb database and export it to dump.sql file
-pg_dump -U park_announce padb --schema-only > dump.sql
+pg_dump -U park_announce padb > dump.sql
 
 --exit db container and cd /park-announce directory in host
 --run command below to copy dump file from container to host current directory
@@ -29,5 +29,5 @@ psql -U park_announce padb < dump.sql
 
 
 --pa_corporation_users tablosuna resulguldibi@gmail.com ve sifre degeri 1234 ile ornek kayit eklemek icin
-INSERT INTO public.pa_corporation_users(id, status, email, password, corporation_id) VALUES ('932b7062-6435-4be1-83d1-b37f9d3f0333', 1, 'resulguldibi@gmail.com', '$2a$10$E8rQ34gcb/80PT.c1o.WXu22AEcf7BPTqHBsWWfmi1dw9bjNleSAu','932b7062-6435-4be1-83d1-b37f9d3f0448');
+INSERT INTO public.pa_corporation_users(id, status, email, password, corporation_id, role_id) VALUES ('932b7062-6435-4be1-83d1-b37f9d3f0333', 1, 'resulguldibi@gmail.com', '$2a$10$E8rQ34gcb/80PT.c1o.WXu22AEcf7BPTqHBsWWfmi1dw9bjNleSAu','932b7062-6435-4be1-83d1-b37f9d3f0448','0d811a85-c53b-4d5e-9c61-97d9607259e1');
 	

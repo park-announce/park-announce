@@ -18,6 +18,12 @@ type CorporationUser struct {
 	Password      string `db:"password" json:"password"`
 	Email         string `db:"email" json:"email"`
 	CorporationId string `db:"corpoaration_id" json:"corpoaration_id"`
+	RoleId        string `db:"role_id" json:"role_id"`
+}
+
+type CorporationUserRole struct {
+	Id   string `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
 }
 
 type ResponseStatus struct {
@@ -111,5 +117,6 @@ type IEntity interface {
 	Do()
 }
 
-func (user User) Do()                       {}
-func (corporationUser CorporationUser) Do() {}
+func (user User) Do()                               {}
+func (corporationUser CorporationUser) Do()         {}
+func (corporationUserRole CorporationUserRole) Do() {}
