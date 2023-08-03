@@ -8,7 +8,7 @@ import 'package:pa_mobile_app/models/api_error_response.dart';
 import 'package:pa_mobile_app/models/check_api_token_response.dart';
 import 'package:uuid/uuid.dart';
 
-const String kBaseUri = 'http://192.168.0.17:8000';
+const String kBaseUri = 'http://192.168.0.17:8001';
 
 void checkApi() {
   http.post(Uri.parse('$kBaseUri/google/oauth2/token')).then(

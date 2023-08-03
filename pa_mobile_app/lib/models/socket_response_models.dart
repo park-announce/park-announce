@@ -24,7 +24,7 @@ class CreateParkLocationResponse {
 }
 
 class NearestLocationsResponse {
-  final int duration;
+  late int duration;
   final List<Location> locations;
   NearestLocationsResponse(this.duration, this.locations);
   factory NearestLocationsResponse.fromJson(Map<String, dynamic> json) {

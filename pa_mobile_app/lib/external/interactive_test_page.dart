@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert' as convert;
 
 import 'package:flutter/material.dart';
@@ -30,13 +31,17 @@ class InteractiveTestPage extends StatefulWidget {
 }
 
 class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerProviderStateMixin {
+  Timer? countdownTimer;
   late WebSocketChannel _channel;
 
   final MapController mapController = MapController();
   // Enable pinchZoom and doubleTapZoomBy by default
   int flags = InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom | InteractiveFlag.drag;
   LatLng userLocation = const LatLng(41.09322441408693, 28.998664108745555);
+  LatLng mapCenterPosition = const LatLng(41.09322441408693, 28.998664108745555);
+
   late List<Location> locations = [];
+  int remainingTime = 0;
   static const _startedId = 'AnimatedMapController#MoveStarted';
   static const _inProgressId = 'AnimatedMapController#MoveInProgress';
   static const _finishedId = 'AnimatedMapController#MoveFinished';
@@ -46,7 +51,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       SharedPreferences.getInstance().then((value) {
-        _channel = WebSocketChannel.connect(Uri.parse('ws://192.168.0.17:8000/socket/connect?Authorization=${value.getString('Token')}'));
+        _channel = WebSocketChannel.connect(Uri.parse('ws://192.168.0.17:8001/socket/connect?Authorization=${value.getString('Token')}'));
         _channel.stream.listen((event) {
           _processWebSocketMessage(event);
         });
@@ -60,7 +65,12 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
     });
     super.initState();
     _getLocation().then((value) => {_setLocation(value)});
-
+    countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {
+        remainingTime = remainingTime - 1;
+        locations = remainingTime > 0 ? locations : [];
+      });
+    });
     socketResponseProcessors[kCreateParkLocation] = (Map<String, dynamic> json) {
       final ReserveParkLocationResponse response = ReserveParkLocationResponse.fromJson(json);
     };
@@ -71,8 +81,15 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
       for (final element in response.locations) {
         element.index = index++;
       }
+      if (response.locations.length == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Center(child: const Text('No Data')),
+        ));
+      }
       setState(() {
         locations = response.locations;
+        //remainingTime = response.duration;
+        remainingTime = 5;
       });
     };
 
@@ -157,6 +174,11 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
           SocketRequestMessage(kCreateParkLocation, CreateParkLocationRequest(mapEvent.tapPosition.longitude, mapEvent.tapPosition.latitude, 30));
       _sendSocketMessage(message);
     }
+    if (mapEvent is MapEventMoveEnd) {
+      setState(() {
+        mapCenterPosition = mapEvent.camera.center;
+      });
+    }
     if (mapEvent is! MapEventMove && mapEvent is! MapEventRotate) {
       // do not flood console with move and rotate events
       //debugPrint(_eventName(mapEvent));
@@ -185,6 +207,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> locationList = _getLocations();
     return Scaffold(
       backgroundColor: const Color(0xFF132555),
       body: FutureBuilder<UserInfo>(
@@ -253,57 +276,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
                               bottom: 30,
                               left: 15,
                               right: 15,
-                              child: Column(
-                                  children: locations.map((e) {
-                                return Container(
-                                    padding: EdgeInsets.symmetric(vertical: 3, horizontal: 15),
-                                    decoration: const BoxDecoration(color: Colors.grey),
-                                    width: MediaQuery.of(context).size.width,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        //_openMap(e.latitude!, e.longitude!);
-                                      },
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor: Colors.green,
-                                            child: Text(
-                                              e.index.toString(),
-                                              style: const TextStyle(color: Colors.white),
-                                            ),
-                                          ),
-                                          Text('${e.distanceTo!.toStringAsFixed(2)}m'),
-                                          SizedBox(
-                                            width: 75,
-                                            child: MaterialButton(
-                                              onPressed: () {
-                                                final SocketRequestMessage<ReserveParkRequest> message =
-                                                    SocketRequestMessage<ReserveParkRequest>(kReserveParkLocation, ReserveParkRequest(e.id!));
-                                                _sendSocketMessage<ReserveParkRequest>(message);
-                                                print(e.latitude);
-                                                print(e.longitude);
-                                              },
-                                              color: Colors.green,
-                                              child: const Text('Accept', style: TextStyle(fontSize: 10)),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 75,
-                                            child: MaterialButton(
-                                              onPressed: () {
-                                                locations = locations.where((a) => a.id != e.id).toList();
-                                                setState(() {});
-                                              },
-                                              color: Colors.red,
-                                              textColor: Colors.white,
-                                              child: const Text('Reject', style: TextStyle(fontSize: 10)),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ));
-                              }).toList()),
+                              child: Column(children: locations.length > 0 ? _getLocations() : _getSearchButton()),
                             )
                           ],
                         ),
@@ -317,6 +290,91 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
             }
           }),
     );
+  }
+
+  List<Widget> _getSearchButton() {
+    return [
+      ElevatedButton(
+        onPressed: () {
+          final SocketRequestMessage<GetLocationsNearbyRequest> message = SocketRequestMessage<GetLocationsNearbyRequest>(
+              kGetLocationsNearby, GetLocationsNearbyRequest(mapCenterPosition.longitude, mapCenterPosition.latitude, 5000, 10));
+          _sendSocketMessage(message);
+        },
+        style: TextButton.styleFrom(backgroundColor: Colors.green.shade400, foregroundColor: Colors.white),
+        child: const Text('Bu bölgede ara'),
+      )
+    ];
+  }
+
+  List<Widget> _getLocations() {
+    final List<Widget> locationWidgets = locations.map((entity) {
+      return Container(
+          padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 15),
+          decoration: const BoxDecoration(color: Colors.grey),
+          width: MediaQuery.of(context).size.width,
+          child: GestureDetector(
+            onTap: () {
+              //_openMap(e.latitude!, e.longitude!);
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Text(
+                    entity.index.toString(),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                Text('${entity.distanceTo!.toStringAsFixed(2)}m'),
+                SizedBox(
+                  width: 75,
+                  child: MaterialButton(
+                    onPressed: () {
+                      final SocketRequestMessage<ReserveParkRequest> message =
+                          SocketRequestMessage<ReserveParkRequest>(kReserveParkLocation, ReserveParkRequest(entity.id!));
+                      _sendSocketMessage<ReserveParkRequest>(message);
+                      print(entity.latitude);
+                      print(entity.longitude);
+                    },
+                    color: Colors.green,
+                    child: const Text('Accept', style: TextStyle(fontSize: 10)),
+                  ),
+                ),
+                SizedBox(
+                  width: 75,
+                  child: MaterialButton(
+                    onPressed: () {
+                      locations = locations.where((a) => a.id != entity.id).toList();
+                      setState(() {});
+                    },
+                    color: Colors.red,
+                    textColor: Colors.white,
+                    child: const Text('Reject', style: TextStyle(fontSize: 10)),
+                  ),
+                ),
+              ],
+            ),
+          ));
+    }).toList();
+    locationWidgets.insert(
+        0,
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 15),
+          decoration: const BoxDecoration(color: Colors.grey),
+          width: MediaQuery.of(context).size.width,
+          child: Center(
+            child: CircleAvatar(
+              backgroundColor: Colors.green,
+              child: Text(
+                remainingTime.toString(),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+        ));
+
+    return locationWidgets;
   }
 
   Future<void> _openMap(double latitude, double longitude) async {
