@@ -66,15 +66,28 @@ CREATE TABLE public.pa_corporation_prices (
 ALTER TABLE public.pa_corporation_prices OWNER TO park_announce;
 
 --
+-- Name: pa_corporation_roles; Type: TABLE; Schema: public; Owner: park_announce
+--
+
+CREATE TABLE public.pa_corporation_roles (
+    id character varying(50) NOT NULL,
+    name character varying(200) NOT NULL
+);
+
+
+ALTER TABLE public.pa_corporation_roles OWNER TO park_announce;
+
+--
 -- Name: pa_corporation_users; Type: TABLE; Schema: public; Owner: park_announce
 --
 
 CREATE TABLE public.pa_corporation_users (
     id character varying(50) NOT NULL,
-    status smallint DEFAULT 1,
+    status smallint DEFAULT 1 NOT NULL,
     email character varying(200) NOT NULL,
     password character varying(200) NOT NULL,
-    corporation_id character varying(50) NOT NULL
+    corporation_id character varying(50) NOT NULL,
+    role_id character varying(50) NOT NULL
 );
 
 
@@ -142,12 +155,18 @@ COPY public.pa_corporation_prices (id, corporation_location_id, price, currency,
 
 
 --
+-- Data for Name: pa_corporation_roles; Type: TABLE DATA; Schema: public; Owner: park_announce
+--
+
+COPY public.pa_corporation_roles (id, name) FROM stdin;
+\.
+
+
+--
 -- Data for Name: pa_corporation_users; Type: TABLE DATA; Schema: public; Owner: park_announce
 --
 
-COPY public.pa_corporation_users (id, status, email, password, corporation_id) FROM stdin;
-932b7062-6435-4be1-83d1-b37f9d3f0333	1	resulguldibi@gmail.com	$2a$10$E8rQ34gcb/80PT.c1o.WXu22AEcf7BPTqHBsWWfmi1dw9bjNleSAu	932b7062-6435-4be1-83d1-b37f9d3f0448
-5e02217c-b1ae-4da4-8397-f00f5fa9ff72	1	fatihberksoz@gmail.com	$2a$10$CkdA1gV3DhaV38DVDjfmBOnbKAm4bQg4JuqvbWEQFkLrCAxPUi/hm	932b7062-6435-4be1-83d1-b37f9d3f0448
+COPY public.pa_corporation_users (id, status, email, password, corporation_id, role_id) FROM stdin;
 \.
 
 
@@ -166,6 +185,7 @@ COPY public.pa_corporations (id, name, status) FROM stdin;
 
 COPY public.pa_locations (id, geog, status, owner_id, assigned_user_id, scheduled_available_time, location_type) FROM stdin;
 d2c7a5d9-8ae2-4cc7-a14a-4075b308f505	0101000020E61000004C58BBAC7E033D40A06EE384E48C4440	0	932b7062-6435-4be1-83d1-b37f9d3f0448	\N	\N	0
+9bb18f75-70a8-4d97-90d9-3b1b69c35561	0101000020E61000005C051BAE24033D40A059FEC1068D4440	0	932b7062-6435-4be1-83d1-b37f9d3f0448	\N	\N	0
 \.
 
 
@@ -200,6 +220,22 @@ ALTER TABLE ONLY public.pa_corporation_locations
 
 ALTER TABLE ONLY public.pa_corporation_prices
     ADD CONSTRAINT pa_corporation_prices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pa_corporation_roles pa_corporation_roles_name_key; Type: CONSTRAINT; Schema: public; Owner: park_announce
+--
+
+ALTER TABLE ONLY public.pa_corporation_roles
+    ADD CONSTRAINT pa_corporation_roles_name_key UNIQUE (name);
+
+
+--
+-- Name: pa_corporation_roles pa_corporation_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: park_announce
+--
+
+ALTER TABLE ONLY public.pa_corporation_roles
+    ADD CONSTRAINT pa_corporation_roles_pkey PRIMARY KEY (id);
 
 
 --
@@ -271,6 +307,14 @@ ALTER TABLE ONLY public.pa_corporation_prices
 
 ALTER TABLE ONLY public.pa_corporation_users
     ADD CONSTRAINT pa_corporation_users_corporation_id_fkey FOREIGN KEY (corporation_id) REFERENCES public.pa_corporations(id) NOT VALID;
+
+
+--
+-- Name: pa_corporation_users pa_corporation_users_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: park_announce
+--
+
+ALTER TABLE ONLY public.pa_corporation_users
+    ADD CONSTRAINT pa_corporation_users_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.pa_corporation_roles(id) NOT VALID;
 
 
 --
