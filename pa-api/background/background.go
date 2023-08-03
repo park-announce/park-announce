@@ -154,6 +154,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:   []string{"kafka:9092"},
 		Topic:     fmt.Sprintf("client_response_%d", global.GetInstanceId()),
+		GroupID:   "pa-api-consumer-group",
 		Partition: 0,
 		MaxBytes:  10e6, // 10MB
 	})

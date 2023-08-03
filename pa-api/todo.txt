@@ -108,3 +108,13 @@ curl --location 'http://localhost:8000/corporation/users' \
     "email": "fatihberksoz@gmail.com",
     "corporation_id": "932b7062-6435-4be1-83d1-b37f9d3f0448"
 }'
+
+
+
+
+--local dockerda b'r container'i n instance olarak calistirmak icin.
+
+docker-compose up --scale api=3 -d
+
+--topic partition sayisini guncellemek 
+./kafka-topics.sh --bootstrap-server localhost:9092 --topic client_response_1 --alter --partitions 3
