@@ -165,7 +165,8 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                   pref.setString('Name', account.displayName!);
                   nav_utils.navigate(context, const MapPage());
                   */
-                  nav_utils.navigate(context, RegisterPage(email: account.email));
+                  nav_utils.navigate(
+                      context, RegisterPage(email: account.email, firstName: account.displayName!.split(' ')[0], lastName: account.displayName!.split(' ')[1]));
                 } else {
                   //TODO:Hata ver
                 }

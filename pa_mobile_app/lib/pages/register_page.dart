@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pa_mobile_app/components/pa_button.dart';
 import 'package:pa_mobile_app/components/pa_text_field.dart';
-import 'package:pa_mobile_app/pages/map_page.dart';
-import 'package:pa_mobile_app/utils/navigation_utils.dart' as nav_utils;
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key, required this.email});
+  const RegisterPage({super.key, required this.email, required this.firstName, required this.lastName});
   final String email;
+  final String firstName;
+  final String lastName;
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -22,6 +22,8 @@ class _RegisterPageState extends State<RegisterPage> {
   void initState() {
     super.initState();
     _emailController.text = widget.email;
+    _firstNameController.text = widget.firstName;
+    _lastNameController.text = widget.lastName;
   }
 
   @override

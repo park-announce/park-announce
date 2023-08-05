@@ -73,7 +73,7 @@ class _RegisterMailPageState extends State<RegisterMailPage> {
                         completed: (String value) {
                           _checkOtp(value.toString(), context).then((result) {
                             if (result) {
-                              nav_utils.navigate(context, RegisterPage(email: _emailController.text), onReturn: () {
+                              nav_utils.navigate(context, RegisterPage(email: _emailController.text, firstName: '', lastName: ''), onReturn: () {
                                 _pinController.text = "";
                                 _pageStateStatus = PageStateStatus.initial;
                               });
