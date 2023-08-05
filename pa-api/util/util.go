@@ -25,6 +25,7 @@ import (
 
 func CheckErr(err error) {
 	if err != nil {
+		log.Println("error :", err)
 		panic(err)
 	}
 }
@@ -84,6 +85,7 @@ func GetGoogleIdTokenSignKey(httpClient client.IHttpClient, idToken string) (str
 	var googleOpenIDOAuthCertKey *entity.GoogleOpenIDOAuthCertKey
 	googleJWTHeader, err := GetGoogleIdTokenHeaderInfo(idToken)
 	if err != nil {
+		log.Println("error :", err)
 		return "", err
 	}
 
@@ -103,12 +105,14 @@ func GetGoogleIdTokenHeaderInfo(idToken string) (*entity.GoogleJWTHeader, error)
 	headerBytes, err := DecodeBase64(jwtToken.Header)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(headerBytes, googleJWTHeader)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -132,6 +136,7 @@ func GetGoogleOpenIDOAuthCertKey(httpClient client.IHttpClient, jwtHeader *entit
 	googleOpenIDOAuthCertResponse, err := GetGoogleOpenIDOAuthCerts(httpClient)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -177,6 +182,7 @@ func CheckPasswordHash(password, hash string) bool {
 func GeneratePasswordHash(pwd string) (string, error) {
 	res, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	if err != nil {
+		log.Println("error :", err)
 		return "", err
 	}
 
@@ -186,6 +192,7 @@ func GeneratePasswordHash(pwd string) (string, error) {
 func GenerateSecurePassword(length, numDigits, numSymbols int, noUpper, allowRepeat bool) (string, error) {
 	res, err := password.Generate(length, numDigits, numSymbols, noUpper, allowRepeat)
 	if err != nil {
+		log.Println("error :", err)
 		log.Println(err)
 		return "", nil
 	}

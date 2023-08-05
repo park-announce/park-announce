@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -42,6 +43,7 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 		key, err := util.GetGoogleIdTokenSignKey(service.httpClient, idToken)
 
 		if err != nil {
+			log.Println("error :", err)
 			return nil, err
 		}
 
@@ -59,9 +61,10 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 	}
 
 	//check is user registered
-	dbUser, err := service.userRepository.QueryX("User", googleUser.Email, "select id from pa_users where email = $1")
+	dbUser, err := service.userRepository.QueryX("User", "select id from pa_users where email = $1", googleUser.Email)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -91,6 +94,7 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 	tokenstring, err = jwtToken.SignedString([]byte(os.Getenv("PA_API_JWT_KEY")))
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, types.NewBusinessException("google oauth2 token exception", "exp.google.oauth2.token")
 	}
 
@@ -114,6 +118,7 @@ func (service *UserService) GetGuidForGoogleRegistration(idToken string, clientT
 		key, err := util.GetGoogleIdTokenSignKey(service.httpClient, idToken)
 
 		if err != nil {
+			log.Println("error :", err)
 			return nil, err
 		}
 
@@ -131,9 +136,10 @@ func (service *UserService) GetGuidForGoogleRegistration(idToken string, clientT
 	}
 
 	//check is user already register
-	dbUser, err := service.userRepository.QueryX("User", user.Email, "select id from pa_users where email = $1")
+	dbUser, err := service.userRepository.QueryX("User", "select id from pa_users where email = $1", user.Email)
 
 	if err != nil {
+		log.Println("error :", err)
 		return "", types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -146,6 +152,7 @@ func (service *UserService) GetGuidForGoogleRegistration(idToken string, clientT
 	_, err = service.redisClient.Set(fmt.Sprintf("preregister-guid|%s", guid), user.Email, time.Minute*15)
 
 	if err != nil {
+		log.Println("error :", err)
 		return "", types.NewBusinessException("register with google", "exp.redis.otp.error")
 	}
 
@@ -159,6 +166,7 @@ func (service *UserService) SendOtp(email string) (string, error) {
 	userFromDb, err := service.userRepository.QueryX("User", "select * from pa_users where email = $1;", email)
 
 	if err != nil {
+		log.Println("error :", err)
 		return "", types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -173,12 +181,14 @@ func (service *UserService) SendOtp(email string) (string, error) {
 	_, err = service.redisClient.Set(fmt.Sprintf("preregister-guid|%s", guid), email, time.Minute*15)
 
 	if err != nil {
+		log.Println("error :", err)
 		return "", types.NewBusinessException("register with mail", "exp.redis.otp.error")
 	}
 
 	_, err = service.redisClient.Set(fmt.Sprintf("preregister-otp|%s", guid), authorizationCode, time.Minute*3)
 
 	if err != nil {
+		log.Println("error :", err)
 		return "", types.NewBusinessException("register with mail", "exp.redis.otp.error")
 	}
 
@@ -191,6 +201,7 @@ func (service *UserService) ValidateOtp(guid string, email string, otp string) e
 	sendedMail, err := service.redisClient.Get(fmt.Sprintf("preregister-guid|%s", guid))
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
 	}
 
@@ -199,6 +210,11 @@ func (service *UserService) ValidateOtp(guid string, email string, otp string) e
 	}
 
 	sendOtp, err := service.redisClient.Get(fmt.Sprintf("preregister-otp|%s", guid))
+
+	if err != nil {
+		log.Println("error :", err)
+		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
+	}
 
 	if sendOtp != otp {
 		return types.NewBusinessException("invalid authorization code", "exp.register.invalid_otp")
@@ -213,6 +229,7 @@ func (service *UserService) Register(guid, email, firstName, lastName, mobilePho
 	sendedMail, err := service.redisClient.Get(fmt.Sprintf("preregister-guid|%s", guid))
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
 	}
 
@@ -224,18 +241,21 @@ func (service *UserService) Register(guid, email, firstName, lastName, mobilePho
 	_, err = service.userRepository.Insert("insert into  pa_users (id,email,first_name,last_name,status,mobile_phone,city_code) values($1,$2,$3,$4,$5,$6,$7);", userId, email, firstName, lastName, 1, mobilePhone, city)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
 	hashedPassword, err := util.GeneratePasswordHash(password)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
 	_, err = service.userRepository.Insert("insert into  pa_user_passwords (id,user_id,password) values($1,$2,$3);", util.GenerateGuid(), userId, hashedPassword)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 

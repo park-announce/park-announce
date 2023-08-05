@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -37,6 +38,7 @@ func (dbCLientFactory DBClientFactory) NewDBClient() *DBClient {
 	pool, err := Connect(dbCLientFactory.driverName, dbCLientFactory.dataSourceName)
 
 	if err != nil {
+		log.Println("error :", err)
 		panic(err)
 	}
 

@@ -184,6 +184,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 		default:
 			m, err := reader.ReadMessage(context.Background())
 			if err != nil {
+				log.Println("error :", err)
 				break
 			}
 
@@ -233,7 +234,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 					}
 
 					if err != nil {
-						log.Printf("unexpected error %v", err)
+						log.Println("error :", err)
 					}
 					break
 				}
@@ -277,6 +278,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain
 		default:
 			m, err := reader.ReadMessage(context.Background())
 			if err != nil {
+				log.Println("error :", err)
 				break
 			}
 			fmt.Printf("message consumed from topic : %s,  offset : %d, key : %s, value : %s\n", m.Topic, m.Offset, string(m.Key), string(m.Value))
@@ -285,7 +287,7 @@ func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain
 
 			err = json.Unmarshal(m.Value, &clientKafkaResponseMessage)
 			if err != nil {
-				log.Printf("unexpected error %v", err)
+				log.Println("error :", err)
 				break
 			}
 

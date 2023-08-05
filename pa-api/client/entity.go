@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -38,6 +39,7 @@ func (client *HttpClient) Get(url string) IHttpClient {
 
 	res, err := client.client.Get(url)
 	if err != nil {
+		log.Println("error :", err)
 		client.err = errors.New(fmt.Sprintf("error in Get-> %s", err.Error()))
 		return client
 	}
@@ -57,6 +59,7 @@ func (client *HttpClient) PostJson(url string, data interface{}) IHttpClient {
 	dataBytes, err := json.Marshal(data)
 
 	if err != nil {
+		log.Println("error :", err)
 		client.err = errors.New(fmt.Sprintf("error in PostJson marshal-> %s", err.Error()))
 		return client
 	}
@@ -66,6 +69,7 @@ func (client *HttpClient) PostJson(url string, data interface{}) IHttpClient {
 	res, err := client.client.Post(url, "application/json", reader)
 
 	if err != nil {
+		log.Println("error :", err)
 		client.err = errors.New(fmt.Sprintf("error in Post-> %s", err.Error()))
 		return client
 	}
@@ -85,6 +89,7 @@ func (client *HttpClient) PutJson(url string, data interface{}) IHttpClient {
 	dataBytes, err := json.Marshal(data)
 
 	if err != nil {
+		log.Println("error :", err)
 		client.err = errors.New(fmt.Sprintf("error in PutJson marshal-> %s", err.Error()))
 		return client
 	}
@@ -94,6 +99,7 @@ func (client *HttpClient) PutJson(url string, data interface{}) IHttpClient {
 	request, err := http.NewRequest(http.MethodPut, url, reader)
 
 	if err != nil {
+		log.Println("error :", err)
 		client.err = errors.New(fmt.Sprintf("error in PutJson http.NewRequest-> %s", err.Error()))
 		return client
 	}
@@ -102,6 +108,7 @@ func (client *HttpClient) PutJson(url string, data interface{}) IHttpClient {
 	res, err := client.client.Do(request)
 
 	if err != nil {
+		log.Println("error :", err)
 		client.err = errors.New(fmt.Sprintf("error in Put-> %s", err.Error()))
 		return client
 	}
@@ -123,6 +130,7 @@ func (client *HttpClient) PostUrlEncoded(url string, data url.Values) IHttpClien
 	res, err := client.client.Post(url, "application/x-www-form-urlencoded", reader)
 
 	if err != nil {
+		log.Println("error :", err)
 		client.err = errors.New(fmt.Sprintf("error in response decoding-> %s", err.Error()))
 		return client
 	}
@@ -163,6 +171,7 @@ func (client *HttpClient) EndStruct(response interface{}) error {
 	err := json.NewDecoder(client.response.Body).Decode(response)
 
 	if err != nil {
+		log.Println("error :", err)
 		return errors.New(fmt.Sprintf("error in response decoding-> %s", err.Error()))
 	}
 

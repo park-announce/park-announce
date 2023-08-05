@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"log"
+
 	"github.com/park-announce/pa-api/entity"
 	"github.com/park-announce/pa-api/factory"
 )
@@ -17,6 +19,7 @@ func (repository *UserRepository) QueryX(instanceType string, query string, args
 
 	result, err := Query(repository.GetConnection(), query, args...)
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 

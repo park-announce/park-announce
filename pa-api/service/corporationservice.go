@@ -15,7 +15,7 @@ func (service *CorporationService) GetCorporationToken(password string, email st
 	corporationUserFromDb, err := service.corporationRepository.QueryX("CorporationUser", "select id,password,email from pa_corporation_users where email = $1 and status = $2;", email, 1)
 
 	if err != nil {
-		log.Printf("error : %v", err)
+		log.Println("error :", err)
 		return nil, types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -41,7 +41,7 @@ func (service *CorporationService) GetCorporationToken(password string, email st
 	tokenstring, err := jwtToken.SignedString([]byte(os.Getenv("PA_API_JWT_KEY")))
 
 	if err != nil {
-		log.Printf("error : %v", err)
+		log.Println("error :", err)
 		return nil, types.NewBusinessException("google oauth2 token exception", "exp.google.oauth2.token")
 	}
 
@@ -55,6 +55,7 @@ func (service *CorporationService) UpdateCorporationLocation(user entity.User, i
 	corporationUserFromDb, err := service.corporationRepository.QueryX("CorporationUser", "select * from pa_corporation_users where id = $1 and corporation_id = $2;", user.Id, corporationId)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -66,6 +67,7 @@ func (service *CorporationService) UpdateCorporationLocation(user entity.User, i
 
 	corporationRoleFromDb, err := service.corporationRepository.QueryX("CorporationUserRole", "select * from pa_corporation_roles where id = $1;", corporationUser.RoleId)
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -87,6 +89,7 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 	corporationUserFromDb, err := service.corporationRepository.QueryX("CorporationUser", "select * from pa_corporation_users where id = $1 and corporation_id = $2;", user.Id, corporationId)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -98,6 +101,7 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 
 	corporationRoleFromDb, err := service.corporationRepository.QueryX("CorporationUserRole", "select * from pa_corporation_roles where id = $1;", corporationUser.RoleId)
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -114,6 +118,7 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 	corporationUserFromDb, err = service.corporationRepository.QueryX("CorporationUser", "select * from pa_corporation_users where email = $1;", email)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -125,17 +130,20 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 	pwd, err := util.GenerateSecurePassword(64, 10, 10, false, false)
 	log.Printf("generated password for %s : %s", email, pwd)
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
 	hashedPassword, err := util.GeneratePasswordHash(pwd)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
 	corporationRoleFromDb, err = service.corporationRepository.QueryX("CorporationUserRole", "select * from pa_corporation_roles where name = $1;", "user")
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
@@ -148,6 +156,7 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 	err = service.corporationRepository.InsertX("insert into  pa_corporation_users (id,email,password,status,corporation_id,role_id) values($1,$2,$3,$4,$5,$6);", util.GenerateGuid(), email, hashedPassword, 1, corporationId, corporationUserRole.Id)
 
 	if err != nil {
+		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 

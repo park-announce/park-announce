@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"os"
 
@@ -21,7 +22,7 @@ func UseUserMiddleware() gin.HandlerFunc {
 
 			// get user-id from client in http request header with key "Authorization" in JWT format
 			if authorization == "" {
-				c.AbortWithError(http.StatusUnauthorized, errors.New("No Authorization header found"))
+				c.AbortWithError(http.StatusUnauthorized, errors.New("no authorization header found"))
 			}
 
 			user := entity.User{}
@@ -30,16 +31,14 @@ func UseUserMiddleware() gin.HandlerFunc {
 			})
 
 			if err != nil {
-				c.AbortWithError(http.StatusUnauthorized, errors.New("Invalid Authorization"))
+				log.Println("error :", err)
+				c.AbortWithError(http.StatusUnauthorized, errors.New("invalid authorization"))
 			}
 
 			if token.Valid {
-
-				if err != nil {
-					c.AbortWithError(http.StatusUnauthorized, errors.New("Invalid Authorization"))
-				}
-
 				c.Set("User", user)
+			} else {
+				c.AbortWithError(http.StatusUnauthorized, errors.New("invalid authorization"))
 			}
 		}
 
@@ -48,9 +47,9 @@ func UseUserMiddleware() gin.HandlerFunc {
 }
 
 func isAuthorizationRequired(path string) bool {
-	unAuthoriziedPaths := []string{"/signin", "/signup", "/corporation/token", "/google/oauth2/code", "/google/oauth2/register", "/google/oauth2/token", "/google/oauth2", "/favicon.ico", "/", "/play", "/multiplay", "/stage", "/css/", "/css/play.css", "/js", "/js/play.js", "/js/multiplay.js", "/images", "/images/happy.png", "/images/angry.png", "/images/angry2.png", "/images/history.png", "/images/star.png", "/images/timer.png", "/images/mark.png"}
+	unAuthoriziedPaths := []string{"/preregisterations", "/registerationverifications", "/registerations", "/preregisterations/google", "/google/oauth2/token", "/corporation/token"}
 	var isAuthorizationRequired bool = true
-	if unAuthoriziedPaths != nil && len(unAuthoriziedPaths) > 0 && path != "" {
+	if len(unAuthoriziedPaths) > 0 && path != "" {
 		for _, unAuthoriziedPath := range unAuthoriziedPaths {
 			if unAuthoriziedPath == path {
 				isAuthorizationRequired = false

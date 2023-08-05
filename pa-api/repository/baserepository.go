@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 	"reflect"
 
 	"github.com/jmoiron/sqlx"
@@ -26,6 +27,7 @@ func (repository BaseRepository) Update(query string, args ...interface{}) (resu
 	res, err := Update(repository.GetConnection(), query, args...)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -37,6 +39,7 @@ func (repository BaseRepository) Delete(query string, args ...interface{}) (resu
 	res, err := Delete(repository.GetConnection(), query, args...)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -48,6 +51,7 @@ func (repository BaseRepository) Insert(query string, args ...interface{}) (resu
 	res, err := Insert(repository.GetConnection(), query, args...)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -58,6 +62,7 @@ func (repository BaseRepository) GetById(instanceType string, id int64, query st
 
 	result, err := Query(repository.GetConnection(), query, id)
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -71,6 +76,7 @@ func (repository BaseRepository) GetById(instanceType string, id int64, query st
 func (repository BaseRepository) GetByIdList(instanceType string, query string, id ...interface{}) ([]interface{}, error) {
 	result, err := Query(repository.GetConnection(), query, id...)
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -91,6 +97,7 @@ func (repository BaseRepository) GetAll(instanceType string, query string) (inte
 
 	result, err := Query(repository.GetConnection(), query)
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -111,6 +118,7 @@ func (repository BaseRepository) GetAllX(instanceType string, query string) (int
 
 	result, err := QueryX(repository.GetConnection(), query, instanceType)
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -142,18 +150,21 @@ func Query(db *sqlx.DB, query string, args ...interface{}) (result []map[string]
 	rows, err := db.Query(query, args...)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
 	err = rows.Err()
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
 	columns, err := rows.Columns()
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -186,16 +197,19 @@ func QueryX(db *sqlx.DB, query string, instanceType string, args ...interface{})
 	rows, err := db.Queryx(query, args...)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
 	err = rows.Err()
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -215,12 +229,14 @@ func exec(db *sqlx.DB, query string, args ...interface{}) (result sql.Result, er
 	defer stmt.Close()
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
 	res, err := stmt.Exec(args...)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -233,12 +249,14 @@ func execTransaction(tx *sql.Tx, query string, args ...interface{}) (result sql.
 	defer stmt.Close()
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
 	res, err := tx.Stmt(stmt).Exec(args...)
 
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	} else {
 		return res, err

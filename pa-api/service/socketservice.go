@@ -35,6 +35,7 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 
 	connection, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
+		log.Println("error :", err)
 		panic(err)
 	}
 
@@ -57,6 +58,7 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 		// Read message from browser
 		_, msg, err := connection.ReadMessage()
 		if err != nil {
+			log.Println("error :", err)
 			return
 		}
 
@@ -80,6 +82,7 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 		data, err := json.Marshal(clientKafkaRequestMessage)
 
 		if err != nil {
+			log.Println("error :", err)
 			return
 		}
 
@@ -102,7 +105,7 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 			}
 
 			if err != nil {
-				log.Printf("unexpected error %v", err)
+				log.Println("error :", err)
 			}
 			break
 		}
@@ -115,6 +118,7 @@ func (client *SocketClient) SendMessage(message []byte) {
 	err := client.conn.connection.WriteMessage(websocket.TextMessage, message)
 
 	if err != nil {
+		log.Println("error :", err)
 		panic(err)
 	}
 }

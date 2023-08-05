@@ -1,0 +1,240 @@
+{
+	"info": {
+		"_postman_id": "b43bc151-2f5e-4112-b147-64a55ade2d1d",
+		"name": "park-announce",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/preregisterations/google",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjkxMWUzOWUyNzkyOGFlOWYxZTlkMWUyMTY0NmRlOTJkMTkzNTFiNDQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI0MTE5ODU5MjYzMTgtZW1oazc3MXVvcmM2ZzhqODZjbTh1ZDdlbGs4NDA4azIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI0MTE5ODU5MjYzMTgtZW1oazc3MXVvcmM2ZzhqODZjbTh1ZDdlbGs4NDA4azIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDY5MDkzOTEyMDUwMTgxNDUyODUiLCJlbWFpbCI6InJlc3VsZ3VsZGliaUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmJmIjoxNjkxMjcwNTc0LCJuYW1lIjoicmVzdWwgZ8O8bGRpYmkiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUFjSFR0Y0VrQkJGRUM1RGVtaEZ6MDgzaDJLZktucTFrR19LeWFtX0lNYk1Rd3R2PXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6InJlc3VsIiwiZmFtaWx5X25hbWUiOiJnw7xsZGliaSIsImxvY2FsZSI6InRyIiwiaWF0IjoxNjkxMjcwODc0LCJleHAiOjE2OTEyNzQ0NzQsImp0aSI6IjlmYmQyOWQyYzAxZjA3ZWY5NGY2ZGQyZjdhZGE1NGI5ODdkMWFjMTYifQ.gYxXVuFBJhSHO206UBXHc6tx19gaVO1RAsacQFeNGKdLJDqutu23G4XP1kWy4INYUyUaQBh3q9V9LX6iYKGBuQONM3GSaaF0Oog1_6JAhG-_XHu9aucfR8oDHSyEX0H9qS_7DL5WrWe5Scn0-lFo-LnnAV2GTFPks3plGsAkVSNRheX8hOILzQUnB7-cX9WxmhK2mbc6krRwCMom0Q3ngYJ5JGMKQLifqhX0C78N5soNZwsoDUXgwdIlWVOn4W7hh-bdlY6YBJukcviQD2Z8FjYtTIdpmOezOiIvNkxJrfYQ3upZECl0iZJed8GNvGG2EV_d8qeD6aw14_dFnlUdWg",
+						"type": "default",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"client_type\":\"web\",\n    \"token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjkxMWUzOWUyNzkyOGFlOWYxZTlkMWUyMTY0NmRlOTJkMTkzNTFiNDQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI0MTE5ODU5MjYzMTgtZW1oazc3MXVvcmM2ZzhqODZjbTh1ZDdlbGs4NDA4azIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI0MTE5ODU5MjYzMTgtZW1oazc3MXVvcmM2ZzhqODZjbTh1ZDdlbGs4NDA4azIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDY5MDkzOTEyMDUwMTgxNDUyODUiLCJlbWFpbCI6InJlc3VsZ3VsZGliaUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmJmIjoxNjkxMjcwNTc0LCJuYW1lIjoicmVzdWwgZ8O8bGRpYmkiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUFjSFR0Y0VrQkJGRUM1RGVtaEZ6MDgzaDJLZktucTFrR19LeWFtX0lNYk1Rd3R2PXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6InJlc3VsIiwiZmFtaWx5X25hbWUiOiJnw7xsZGliaSIsImxvY2FsZSI6InRyIiwiaWF0IjoxNjkxMjcwODc0LCJleHAiOjE2OTEyNzQ0NzQsImp0aSI6IjlmYmQyOWQyYzAxZjA3ZWY5NGY2ZGQyZjdhZGE1NGI5ODdkMWFjMTYifQ.gYxXVuFBJhSHO206UBXHc6tx19gaVO1RAsacQFeNGKdLJDqutu23G4XP1kWy4INYUyUaQBh3q9V9LX6iYKGBuQONM3GSaaF0Oog1_6JAhG-_XHu9aucfR8oDHSyEX0H9qS_7DL5WrWe5Scn0-lFo-LnnAV2GTFPks3plGsAkVSNRheX8hOILzQUnB7-cX9WxmhK2mbc6krRwCMom0Q3ngYJ5JGMKQLifqhX0C78N5soNZwsoDUXgwdIlWVOn4W7hh-bdlY6YBJukcviQD2Z8FjYtTIdpmOezOiIvNkxJrfYQ3upZECl0iZJed8GNvGG2EV_d8qeD6aw14_dFnlUdWg\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Url}}/preregisterations/google",
+					"host": [
+						"{{Url}}"
+					],
+					"path": [
+						"preregisterations",
+						"google"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/corporation/locations/229c5221-0dd6-40a4-b0de-cd63424afeXX",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkzMmI3MDYyLTY0MzUtNGJlMS04M2QxLWIzN2Y5ZDNmMDQ0OCIsImZuYW1lIjoicmVzdWwiLCJsbmFtZSI6ImfDvGxkaWJpIiwiZW1haWwiOiJyZXN1bGd1bGRpYmlAZ21haWwuY29tIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FBY0hUdGNFa0JCRkVDNURlbWhGejA4M2gyS2ZLbnExa0dfS3lhbV9JTWJNUXd0dj1zOTYtYyJ9.VjDw_lgWhjB30i1xevver_bmU63Y5BTqW3cDJkiXacU",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"count\": 12,\n    \"corporation_id\": \"932b7062-6435-4be1-83d1-b37f9d3f0448\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Url}}/corporation/locations/229c5221-0dd6-40a4-b0de-cd63424afeXX",
+					"host": [
+						"{{Url}}"
+					],
+					"path": [
+						"corporation",
+						"locations",
+						"229c5221-0dd6-40a4-b0de-cd63424afeXX"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/corporation/token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"resulguldibi@gmail.com\",\n    \"password\": \"1234\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Url}}/corporation/token",
+					"host": [
+						"{{Url}}"
+					],
+					"path": [
+						"corporation",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/preregisterations",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkzMmI3MDYyLTY0MzUtNGJlMS04M2QxLWIzN2Y5ZDNmMDMzMyIsImZuYW1lIjoiIiwibG5hbWUiOiIiLCJlbWFpbCI6InJlc3VsZ3VsZGliaUBnbWFpbC5jb20iLCJwaWN0dXJlIjoiIn0.Lw9S54iGC0E4h8uY_5E5DW6m8yTLpOpAhG6Yzk4FLT4",
+						"type": "default",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"2@gmail.com\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Url}}/preregisterations/google",
+					"host": [
+						"{{Url}}"
+					],
+					"path": [
+						"preregisterations",
+						"google"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/registerationverifications",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkzMmI3MDYyLTY0MzUtNGJlMS04M2QxLWIzN2Y5ZDNmMDMzMyIsImZuYW1lIjoiIiwibG5hbWUiOiIiLCJlbWFpbCI6InJlc3VsZ3VsZGliaUBnbWFpbC5jb20iLCJwaWN0dXJlIjoiIn0.Lw9S54iGC0E4h8uY_5E5DW6m8yTLpOpAhG6Yzk4FLT4",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"guid\": \"f660c235-72a2-4fd8-adff-4a9a18c7fa82\",\n    \"otp\": \"1234\",\n    \"email\": \"2@gmail.com\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Url}}/registerationverifications",
+					"host": [
+						"{{Url}}"
+					],
+					"path": [
+						"registerationverifications"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/registerations",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkzMmI3MDYyLTY0MzUtNGJlMS04M2QxLWIzN2Y5ZDNmMDMzMyIsImZuYW1lIjoiIiwibG5hbWUiOiIiLCJlbWFpbCI6InJlc3VsZ3VsZGliaUBnbWFpbC5jb20iLCJwaWN0dXJlIjoiIn0.Lw9S54iGC0E4h8uY_5E5DW6m8yTLpOpAhG6Yzk4FLT4",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"guid\": \"c072d372-c0a9-4e5c-ae22-70991bc98540\",\n    \"email\": \"resulguldibi@gmail.com\",\n    \"first_name\":\"kamil\",\n    \"last_name\":\"tayyare\",\n    \"mobile_phone\":\"905542891616\",\n    \"city_code\":34,\n    \"password\":\"kimene\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Url}}/registerations",
+					"host": [
+						"{{Url}}"
+					],
+					"path": [
+						"registerations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/google/oauth2/token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"token\":\"4/0AZEOvhUUlR__rwjTO2G_oTW6J_VSpePcJaxBeP2TqtWzweU9AThuf5YCbj_wmN8gLybsZQ\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Url}}/google/oauth2/token",
+					"host": [
+						"{{Url}}"
+					],
+					"path": [
+						"google",
+						"oauth2",
+						"token"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

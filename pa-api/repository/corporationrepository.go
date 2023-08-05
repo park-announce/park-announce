@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"log"
+
 	"github.com/park-announce/pa-api/entity"
 	"github.com/park-announce/pa-api/factory"
 )
@@ -17,6 +19,7 @@ func (repository *CorporationRepository) QueryX(instanceType string, query strin
 
 	result, err := Query(repository.GetConnection(), query, args...)
 	if err != nil {
+		log.Println("error :", err)
 		return nil, err
 	}
 
@@ -33,6 +36,7 @@ func (repository *CorporationRepository) UpdateX(query string, args ...interface
 
 	_, err := Update(repository.GetConnection(), query, args...)
 	if err != nil {
+		log.Println("error :", err)
 		return err
 	}
 
@@ -43,6 +47,7 @@ func (repository *CorporationRepository) InsertX(query string, args ...interface
 
 	_, err := Insert(repository.GetConnection(), query, args...)
 	if err != nil {
+		log.Println("error :", err)
 		return err
 	}
 
