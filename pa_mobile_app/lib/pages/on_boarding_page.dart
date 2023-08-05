@@ -5,9 +5,11 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:pa_mobile_app/components/pa_login_button.dart';
 import 'package:pa_mobile_app/models/api_error_response.dart';
 import 'package:pa_mobile_app/models/check_api_token_response.dart';
+import 'package:pa_mobile_app/models/preregister_google_response.dart';
 import 'package:pa_mobile_app/pages/login_page.dart';
 import 'package:pa_mobile_app/pages/map_page.dart';
 import 'package:pa_mobile_app/pages/register_mail_page.dart';
+import 'package:pa_mobile_app/pages/register_page.dart';
 import 'package:pa_mobile_app/service.dart';
 import 'package:pa_mobile_app/utils/navigation_utils.dart' as nav_utils;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,37 +35,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
     super.initState();
     //_googleSignIn.signInSilently();
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) async {
-      // In mobile, being authenticated means being authorized...
-      SharedPreferences.getInstance().then((pref) {
-        pref.setString('Email', 'undefined');
-        account!.authentication.then((value) {
-          checkApiToken(value.idToken!).then((apiTokenResponseBody) {
-            if (apiTokenResponseBody is CheckApiTokenResponse) {
-              final decoded = JwtDecoder.decode(apiTokenResponseBody.token);
-              pref.setString('Email', decoded["email"].toString());
-              pref.setString('Token', apiTokenResponseBody.token);
-              pref.setString('IdToken', value.idToken!);
-              pref.setString('Name', account.displayName!);
-              nav_utils.navigate(context, const MapPage());
-            } else if (apiTokenResponseBody is ApiErrorResponse && apiTokenResponseBody.code == 'exp.user.notfound') {
-              register(value.idToken!).then((apiTokenResponseBody) {
-                if (apiTokenResponseBody is CheckApiTokenResponse) {
-                  final decoded = JwtDecoder.decode(apiTokenResponseBody.token);
-                  pref.setString('Email', decoded["email"].toString());
-                  pref.setString('Token', apiTokenResponseBody.token);
-                  pref.setString('IdToken', value.idToken!);
-                  pref.setString('Name', account.displayName!);
-                  nav_utils.navigate(context, const MapPage());
-                } else {
-                  //TODO:Hata ver
-                }
-              });
-            }
-          });
-        });
-      });
-
-      // However, in the web...
+      _handleGoogleAccount(account!);
     });
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -157,12 +129,53 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                     ),
                     PaLoginButton(
                         onPressedFunction: () {
-                          _googleSignIn.signIn();
+                          _googleSignIn.signIn().then((value) {
+                            _handleGoogleAccount(value!);
+                          });
                         },
                         text: 'Continue With Google')
                   ],
                 ),
               ),
             ));
+  }
+
+  void _handleGoogleAccount(GoogleSignInAccount account) {
+    {
+      // In mobile, being authenticated means being authorized...
+      SharedPreferences.getInstance().then((pref) {
+        pref.setString('Email', 'undefined');
+        account!.authentication.then((value) {
+          checkApiToken(value.idToken!).then((apiTokenResponseBody) {
+            if (apiTokenResponseBody is CheckApiTokenResponse) {
+              final decoded = JwtDecoder.decode(apiTokenResponseBody.token);
+              pref.setString('Email', decoded["email"].toString());
+              pref.setString('Token', apiTokenResponseBody.token);
+              pref.setString('IdToken', value.idToken!);
+              pref.setString('Name', account.displayName!);
+              nav_utils.navigate(context, const MapPage());
+            } else if (apiTokenResponseBody is ApiErrorResponse && apiTokenResponseBody.code == 'exp.user.notfound') {
+              registerGoogle(value.idToken!).then((apiTokenResponseBody) {
+                if (apiTokenResponseBody is PreRegisterGoogleResponse) {
+                  /*
+                  final decoded = JwtDecoder.decode(apiTokenResponseBody.token);
+                  pref.setString('Email', decoded["email"].toString());
+                  pref.setString('Token', apiTokenResponseBody.token);
+                  pref.setString('IdToken', value.idToken!);
+                  pref.setString('Name', account.displayName!);
+                  nav_utils.navigate(context, const MapPage());
+                  */
+                  nav_utils.navigate(context, RegisterPage(email: account.email));
+                } else {
+                  //TODO:Hata ver
+                }
+              });
+            }
+          });
+        });
+      });
+
+      // However, in the web...
+    }
   }
 }

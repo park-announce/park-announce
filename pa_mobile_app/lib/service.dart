@@ -6,9 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:pa_mobile_app/models/api_error_response.dart';
 import 'package:pa_mobile_app/models/check_api_token_response.dart';
+import 'package:pa_mobile_app/models/preregister_google_response.dart';
 import 'package:uuid/uuid.dart';
 
-const String kBaseUri = 'http://192.168.0.17:8001';
+const String kBaseUri = 'http://192.168.0.17:8000';
 
 void checkApi() {
   http.post(Uri.parse('$kBaseUri/google/oauth2/token')).then(
@@ -19,16 +20,16 @@ void checkApi() {
   );
 }
 
-Future<dynamic> register(String apiToken) async {
+Future<dynamic> registerGoogle(String apiToken) async {
   final Response response = await _post(
-    '$kBaseUri/google/oauth2/register',
+    '$kBaseUri/preregisterations/google',
     <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
     jsonEncode(<String, String>{'token': apiToken, 'client_type': Platform.isIOS ? 'ios' : 'android'}),
   );
   if (response.statusCode >= 200 && response.statusCode < 300) {
-    final tokenResponse = CheckApiTokenResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    final tokenResponse = PreRegisterGoogleResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     return tokenResponse;
   } else {
     final errorResponse = ApiErrorResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);

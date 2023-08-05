@@ -38,7 +38,7 @@ class _PaTextFieldState extends State<PaTextField> {
   Widget build(BuildContext context) {
     return TextField(
       focusNode: focusNode,
-      style: Theme.of(context).textTheme.bodyMedium,
+      style: Theme.of(context).textTheme.bodyMedium!,
       keyboardType: widget.keyboardType,
       enabled: widget.enabled,
       controller: widget.controller,
@@ -58,9 +58,11 @@ class _PaTextFieldState extends State<PaTextField> {
                 },
               )
             : null,
-        fillColor: Colors.yellow,
-        focusColor: Colors.green,
         focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(30)),
+          borderSide: BorderSide(width: 1, color: Theme.of(context).primaryColor),
+        ),
+        disabledBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(Radius.circular(30)),
           borderSide: BorderSide(width: 1, color: Theme.of(context).primaryColor),
         ),
@@ -73,7 +75,7 @@ class _PaTextFieldState extends State<PaTextField> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(width: 0.5, color: Colors.grey.shade500),
+          borderSide: BorderSide(width: 0.5, color: Colors.white),
         ),
       ),
     );

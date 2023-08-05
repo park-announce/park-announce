@@ -41,17 +41,17 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'flutter_map Demo',
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(backgroundColor: Colors.white, foregroundColor: Colors.black),
+        scaffoldBackgroundColor: Colors.black,
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.black, foregroundColor: Colors.white),
         hintColor: Colors.grey,
         primaryColor: Colors.white,
         useMaterial3: true,
         disabledColor: Colors.grey,
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         buttonTheme: const ButtonThemeData(buttonColor: Colors.black),
         textTheme: TextTheme(
           bodySmall: GoogleFonts.poppins(fontSize: 12, color: Colors.black),
-          bodyMedium: GoogleFonts.poppins(fontSize: 15, color: Colors.white, decorationColor: Colors.white),
+          bodyMedium: GoogleFonts.poppins(fontSize: 15, color: Colors.black, decorationColor: Colors.white),
         ),
         //colorSchemeSeed: const Color(0xFF8dea88),
       ),
