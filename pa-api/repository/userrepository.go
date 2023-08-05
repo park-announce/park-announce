@@ -13,9 +13,9 @@ func NewUserRepository(dbClient *DBClient) UserRepository {
 	return UserRepository{BaseRepository: BaseRepository{dbClient: dbClient}}
 }
 
-func (repository *UserRepository) GetByMail(instanceType string, mail string, query string) (interface{}, error) {
+func (repository *UserRepository) QueryX(instanceType string, query string, args ...interface{}) (interface{}, error) {
 
-	result, err := Query(repository.GetConnection(), query, mail)
+	result, err := Query(repository.GetConnection(), query, args...)
 	if err != nil {
 		return nil, err
 	}

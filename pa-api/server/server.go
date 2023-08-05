@@ -24,22 +24,16 @@ func NewServer(hub *service.SocketHub) *gin.Engine {
 		socketHandler.HandleSocketConnection(ctx, hub)
 	})
 
-	server.POST("/google/oauth2/code", func(ctx *gin.Context) {
-		dbClient := dbClientFactory.NewDBClient()
-		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient(), repository.NewUserRepository(dbClient)))
-		userHandler.HandleOAuth2GoogleCode(ctx)
-	})
-
 	server.POST("/google/oauth2/token", func(ctx *gin.Context) {
 		dbClient := dbClientFactory.NewDBClient()
 		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient(), repository.NewUserRepository(dbClient)))
 		userHandler.HandleOAuth2GoogleToken(ctx)
 	})
 
-	server.POST("/google/oauth2/register", func(ctx *gin.Context) {
+	server.POST("/preregisterations/google", func(ctx *gin.Context) {
 		dbClient := dbClientFactory.NewDBClient()
 		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient(), repository.NewUserRepository(dbClient)))
-		userHandler.HandleOAuth2GoogleRegister(ctx)
+		userHandler.HandleGetGuidForGoogleRegistration(ctx)
 	})
 
 	server.POST("/preregisterations", func(ctx *gin.Context) {

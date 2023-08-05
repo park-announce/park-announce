@@ -5,11 +5,14 @@ import (
 )
 
 type User struct {
-	Id        string `db:"id" json:"id"`
-	FirstName string `json:"fname"`
-	LastName  string `json:"lname"`
-	Email     string `json:"email"`
-	Picture   string `json:"picture"`
+	Id          string `db:"id" json:"id"`
+	FirstName   string `db:"first_name" json:"first_name"`
+	LastName    string `db:"last_name" json:"last_name"`
+	Email       string `db:"email" json:"email"`
+	Picture     string `db:"picture" json:"picture"`
+	Status      int16  `db:"status" json:"status"`
+	MobilePhone string `db:"mobile_phone" json:"mobile_phone"`
+	CityCode    int16  `db:"city_code" json:"city_code"`
 	jwt.StandardClaims
 }
 

@@ -5,6 +5,14 @@ type GetGoogleOAuthTokenRequest struct {
 	ClientType string `json:"client_type"`
 }
 
+type GetGuidForGoogleRegistrationRequest struct {
+	GetGoogleOAuthTokenRequest
+}
+
+type GetGuidForGoogleRegistrationResponse struct {
+	Guid string `json:"guid"`
+}
+
 type GetGoogleOAuthTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	IdToken      string `json:"id_token"`

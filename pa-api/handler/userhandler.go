@@ -15,30 +15,6 @@ import (
 	"runtime/debug"
 )
 
-func (handler UserHandler) HandleOAuth2GoogleCode(ctx *gin.Context) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
-			util.HandleErr(ctx, err)
-		}
-	}()
-
-	request := contract.GetGoogleOAuthTokenRequest{}
-
-	if err := ctx.ShouldBindJSON(&request); err == nil {
-
-		response, err := handler.userService.GetGoogleOAuthCodeResponse(request.Token, request.ClientType)
-		util.CheckErr(err)
-		ctx.JSON(http.StatusOK, response)
-	} else {
-		exp := &types.ExceptionMessage{}
-		_ = json.Unmarshal([]byte(fmt.Sprint(err)), exp)
-		responseSatus := util.PrepareResponseStatusWithMessage(false, exp.Message, exp.Code, exp.Stack)
-		ctx.JSON(http.StatusBadRequest, responseSatus)
-	}
-}
-
 func (handler UserHandler) HandleOAuth2GoogleToken(ctx *gin.Context) {
 
 	defer func() {
@@ -63,7 +39,7 @@ func (handler UserHandler) HandleOAuth2GoogleToken(ctx *gin.Context) {
 	}
 }
 
-func (handler UserHandler) HandleOAuth2GoogleRegister(ctx *gin.Context) {
+func (handler UserHandler) HandleGetGuidForGoogleRegistration(ctx *gin.Context) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -72,12 +48,12 @@ func (handler UserHandler) HandleOAuth2GoogleRegister(ctx *gin.Context) {
 		}
 	}()
 
-	request := contract.GetGoogleOAuthTokenRequest{}
+	request := contract.GetGuidForGoogleRegistrationRequest{}
 
 	if err := ctx.ShouldBindJSON(&request); err == nil {
-
-		response, err := handler.userService.GetGoogleOAuthRegisterResponse(request.Token, request.ClientType)
+		guid, err := handler.userService.GetGuidForGoogleRegistration(request.Token, request.ClientType)
 		util.CheckErr(err)
+		response := &contract.GetGuidForGoogleRegistrationResponse{Guid: guid}
 		ctx.JSON(http.StatusOK, response)
 	} else {
 		exp := &types.ExceptionMessage{}
