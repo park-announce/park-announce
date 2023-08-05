@@ -20,7 +20,7 @@ void checkApi() {
 }
 
 Future<dynamic> register(String apiToken) async {
-  final Response response = await call(
+  final Response response = await _post(
     '$kBaseUri/google/oauth2/register',
     <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
@@ -37,7 +37,7 @@ Future<dynamic> register(String apiToken) async {
 }
 
 Future<dynamic> checkApiToken(String apiToken) async {
-  final Response response = await call(
+  final Response response = await _post(
     '$kBaseUri/google/oauth2/token',
     <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
@@ -53,8 +53,8 @@ Future<dynamic> checkApiToken(String apiToken) async {
   }
 }
 
-Future<Response> call(String url, Map<String, String> headers, String body) async {
-  final String guid = Uuid().v4();
+Future<Response> _post(String url, Map<String, String> headers, String body) async {
+  final String guid = const Uuid().v4();
   print('Request for $guid: Url: $url, Body: $body');
   final Response response = await http.post(Uri.parse(url), headers: headers, body: body);
   print('Response for $guid: ${response.statusCode} ${response.body}');

@@ -3,11 +3,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:pa_mobile_app/components/pa_login_button.dart';
-import 'package:pa_mobile_app/external/interactive_test_page.dart';
-import 'package:pa_mobile_app/main_page.dart';
 import 'package:pa_mobile_app/models/api_error_response.dart';
 import 'package:pa_mobile_app/models/check_api_token_response.dart';
+import 'package:pa_mobile_app/pages/login_page.dart';
+import 'package:pa_mobile_app/pages/map_page.dart';
+import 'package:pa_mobile_app/pages/register_mail_page.dart';
 import 'package:pa_mobile_app/service.dart';
+import 'package:pa_mobile_app/utils/navigation_utils.dart' as nav_utils;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const List<String> scopes = <String>['email'];
@@ -18,18 +20,18 @@ GoogleSignIn _googleSignIn = GoogleSignIn(
   scopes: scopes,
 );
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class OnBoardingPage extends StatefulWidget {
+  const OnBoardingPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<OnBoardingPage> createState() => _OnBoardingPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _OnBoardingPageState extends State<OnBoardingPage> {
   @override
   void initState() {
     super.initState();
-    _googleSignIn.signInSilently();
+    //_googleSignIn.signInSilently();
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) async {
       // In mobile, being authenticated means being authorized...
       SharedPreferences.getInstance().then((pref) {
@@ -42,9 +44,7 @@ class _LoginPageState extends State<LoginPage> {
               pref.setString('Token', apiTokenResponseBody.token);
               pref.setString('IdToken', value.idToken!);
               pref.setString('Name', account.displayName!);
-              Navigator.of(context).push(
-                MaterialPageRoute<dynamic>(builder: (context) => const InteractiveTestPage()),
-              );
+              nav_utils.navigate(context, const MapPage());
             } else if (apiTokenResponseBody is ApiErrorResponse && apiTokenResponseBody.code == 'exp.user.notfound') {
               register(value.idToken!).then((apiTokenResponseBody) {
                 if (apiTokenResponseBody is CheckApiTokenResponse) {
@@ -53,9 +53,7 @@ class _LoginPageState extends State<LoginPage> {
                   pref.setString('Token', apiTokenResponseBody.token);
                   pref.setString('IdToken', value.idToken!);
                   pref.setString('Name', account.displayName!);
-                  Navigator.of(context).push(
-                    MaterialPageRoute<dynamic>(builder: (context) => const InteractiveTestPage()),
-                  );
+                  nav_utils.navigate(context, const MapPage());
                 } else {
                   //TODO:Hata ver
                 }
@@ -69,14 +67,13 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      showLoginMenu();
+      //showLoginMenu();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF132555),
       body: SizedBox(
         height: double.infinity,
         width: double.infinity,
@@ -93,10 +90,9 @@ class _LoginPageState extends State<LoginPage> {
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Container(
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Colors.white),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).backgroundColor),
                           child: MaterialButton(
-                            textColor: Colors.black,
-                            child: const Text('Get Started'),
+                            child: Text('Get Started', style: Theme.of(context).textTheme.bodyMedium!),
                             onPressed: () {
                               showLoginMenu();
                             },
@@ -129,22 +125,17 @@ class _LoginPageState extends State<LoginPage> {
                 child: Wrap(
                   children: [
                     PaLoginButton(
-                        backColor: Colors.blue,
-                        textColor: Colors.white,
-                        onPressedFunction: () {},
-                        child: const Text(
-                          'Sign Up',
-                          style: TextStyle(fontSize: 11),
-                        )),
+                        onPressedFunction: () {
+                          nav_utils.navigate(context, const RegisterMailPage());
+                        },
+                        text: 'Sign Up'),
                     PaLoginButton(
-                        backColor: Colors.white,
-                        textColor: Colors.black,
-                        onPressedFunction: () {},
-                        child: const Text(
-                          'Log In',
-                          style: TextStyle(fontSize: 11),
-                        )),
-                    const Row(
+                      onPressedFunction: () {
+                        nav_utils.navigate(context, const LoginPage());
+                      },
+                      text: 'Log In',
+                    ),
+                    Row(
                       children: [
                         Expanded(
                           child: Divider(
@@ -152,7 +143,10 @@ class _LoginPageState extends State<LoginPage> {
                             height: 10,
                           ),
                         ),
-                        Text('Or', style: TextStyle(fontSize: 10)),
+                        Text(
+                          'Or',
+                          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).backgroundColor),
+                        ),
                         Expanded(
                           child: Divider(
                             color: Colors.grey,
@@ -162,62 +156,10 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     PaLoginButton(
-                      backColor: Colors.white,
-                      textColor: Colors.black,
-                      onPressedFunction: () {},
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const FaIcon(
-                            FontAwesomeIcons.apple,
-                            size: 18,
-                          ),
-                          const Text(
-                            'Continue With Apple',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                          Container()
-                        ],
-                      ),
-                    ),
-                    PaLoginButton(
-                      backColor: Colors.white,
-                      textColor: Colors.black,
-                      onPressedFunction: () {},
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const FaIcon(
-                            FontAwesomeIcons.facebook,
-                            color: Colors.blue,
-                            size: 18,
-                          ),
-                          const Text(
-                            'Continue With Facebook',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                          Container()
-                        ],
-                      ),
-                    ),
-                    PaLoginButton(
-                      backColor: Colors.white,
-                      textColor: Colors.black,
-                      onPressedFunction: () {
-                        _googleSignIn.signIn();
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const FaIcon(FontAwesomeIcons.google, size: 18),
-                          const Text(
-                            'Continue With Google',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                          Container()
-                        ],
-                      ),
-                    )
+                        onPressedFunction: () {
+                          _googleSignIn.signIn();
+                        },
+                        text: 'Continue With Google')
                   ],
                 ),
               ),

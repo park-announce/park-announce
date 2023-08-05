@@ -1,8 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pa_mobile_app/firebase_options.dart';
-import 'package:pa_mobile_app/login_page.dart';
+import 'package:pa_mobile_app/pages/on_boarding_page.dart';
+import 'package:pa_mobile_app/pages/register_mail_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -37,16 +39,23 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'flutter_map Demo',
-        theme: ThemeData(
-          useMaterial3: true,
-          textTheme: const TextTheme(bodySmall: TextStyle(fontSize: 10)),
-          //colorSchemeSeed: const Color(0xFF8dea88),
+      title: 'flutter_map Demo',
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.white, foregroundColor: Colors.black),
+        hintColor: Colors.grey,
+        primaryColor: Colors.white,
+        useMaterial3: true,
+        disabledColor: Colors.grey,
+        backgroundColor: Colors.black,
+        buttonTheme: const ButtonThemeData(buttonColor: Colors.black),
+        textTheme: TextTheme(
+          bodySmall: GoogleFonts.poppins(fontSize: 12, color: Colors.black),
+          bodyMedium: GoogleFonts.poppins(fontSize: 15, color: Colors.white, decorationColor: Colors.white),
         ),
-        home: const SafeArea(
-          child: Scaffold(
-            body: LoginPage(),
-          ),
-        ));
+        //colorSchemeSeed: const Color(0xFF8dea88),
+      ),
+      home: const OnBoardingPage(),
+    );
   }
 }

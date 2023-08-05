@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert' as convert;
 
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pa_mobile_app/external/intective_flag.dart';
 import 'package:pa_mobile_app/external/map_controller.dart';
@@ -13,24 +12,26 @@ import 'package:pa_mobile_app/external/tile_layer.dart';
 import 'package:pa_mobile_app/external/widget.dart';
 import 'package:pa_mobile_app/models/socket_request_models.dart';
 import 'package:pa_mobile_app/models/socket_response_models.dart';
+import 'package:pa_mobile_app/utils/location_utils.dart' as location_utils;
+import 'package:pa_mobile_app/utils/map_utils.dart' as map_utils;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 typedef ConvertSocketResponseFunction = dynamic Function(Map<String, dynamic> json);
 
-class InteractiveTestPage extends StatefulWidget {
-  const InteractiveTestPage({
+class MapPage extends StatefulWidget {
+  const MapPage({
     Key? key,
   }) : super(key: key);
 
   @override
   State createState() {
-    return _InteractiveTestPageState();
+    return _MapPageState();
   }
 }
 
-class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerProviderStateMixin {
+class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   Timer? countdownTimer;
   late WebSocketChannel _channel;
 
@@ -42,9 +43,6 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
 
   late List<Location> locations = [];
   int remainingTime = 0;
-  static const _startedId = 'AnimatedMapController#MoveStarted';
-  static const _inProgressId = 'AnimatedMapController#MoveInProgress';
-  static const _finishedId = 'AnimatedMapController#MoveFinished';
   Map<String, ConvertSocketResponseFunction> socketResponseProcessors = <String, ConvertSocketResponseFunction>{};
 
   @override
@@ -56,7 +54,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
           _processWebSocketMessage(event);
         });
 
-        _getLocation().then((location) => {_setLocation(location)});
+        location_utils.getLocation().then((location) => {_setLocation(location)});
         final SocketRequestMessage<GetLocationsNearbyRequest> message = SocketRequestMessage<GetLocationsNearbyRequest>(
             kGetLocationsNearby, GetLocationsNearbyRequest(userLocation.longitude, userLocation.latitude, 5000, 10));
 
@@ -64,7 +62,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
       });
     });
     super.initState();
-    _getLocation().then((value) => {_setLocation(value)});
+    location_utils.getLocation().then((value) => {_setLocation(value)});
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() {
         remainingTime = remainingTime - 1;
@@ -72,7 +70,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
       });
     });
     socketResponseProcessors[kCreateParkLocation] = (Map<String, dynamic> json) {
-      final ReserveParkLocationResponse response = ReserveParkLocationResponse.fromJson(json);
+      final ReserveParkLocationResponse _ = ReserveParkLocationResponse.fromJson(json);
     };
 
     socketResponseProcessors[kGetLocationsNearby] = (Map<String, dynamic> json) {
@@ -81,20 +79,19 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
       for (final element in response.locations) {
         element.index = index++;
       }
-      if (response.locations.length == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Center(child: const Text('No Data')),
+      if (response.locations.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Center(child: Text('No Data')),
         ));
       }
       setState(() {
         locations = response.locations;
-        //remainingTime = response.duration;
-        remainingTime = 5;
+        remainingTime = response.duration;
       });
     };
 
     socketResponseProcessors[kReserveParkLocation] = (Map<String, dynamic> json) {
-      final CreateParkLocationResponse response = CreateParkLocationResponse.fromJson(json);
+      final CreateParkLocationResponse _ = CreateParkLocationResponse.fromJson(json);
     };
   }
 
@@ -102,7 +99,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
     setState(() {
       userLocation = location;
     });
-    _animatedMapMove(location, 15);
+    map_utils.animatedMapMove(location, 15, mapController, this);
   }
 
   void _processWebSocketMessage(dynamic event) {
@@ -119,55 +116,6 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
     _channel.sink.add(messageJson);
   }
 
-  void _animatedMapMove(LatLng destLocation, double destZoom) {
-    // Create some tweens. These serve to split up the transition from one location to another.
-    // In our case, we want to split the transition be<tween> our current map center and the destination.
-    final camera = mapController.camera;
-    final latTween = Tween<double>(begin: camera.center.latitude, end: destLocation.latitude);
-    final lngTween = Tween<double>(begin: camera.center.longitude, end: destLocation.longitude);
-    final zoomTween = Tween<double>(begin: camera.zoom, end: destZoom);
-
-    // Create a animation controller that has a duration and a TickerProvider.
-    final controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
-    // The animation determines what path the animation will take. You can try different Curves values, although I found
-    // fastOutSlowIn to be my favorite.
-    final Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
-
-    // Note this method of encoding the target destination is a workaround.
-    // When proper animated movement is supported (see #1263) we should be able
-    // to detect an appropriate animated movement event which contains the
-    // target zoom/center.
-    final startIdWithTarget = '$_startedId#${destLocation.latitude},${destLocation.longitude},$destZoom';
-    bool hasTriggeredMove = false;
-
-    controller.addListener(() {
-      final String id;
-      if (animation.value == 1.0) {
-        id = _finishedId;
-      } else if (!hasTriggeredMove) {
-        id = startIdWithTarget;
-      } else {
-        id = _inProgressId;
-      }
-
-      hasTriggeredMove |= mapController.move(
-        LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-        zoomTween.evaluate(animation),
-        id: id,
-      );
-    });
-
-    animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        controller.dispose();
-      } else if (status == AnimationStatus.dismissed) {
-        controller.dispose();
-      }
-    });
-
-    controller.forward();
-  }
-
   void onMapEvent(MapEvent mapEvent) {
     if (mapEvent is MapEventTap) {
       final SocketRequestMessage<CreateParkLocationRequest> message =
@@ -179,35 +127,10 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
         mapCenterPosition = mapEvent.camera.center;
       });
     }
-    if (mapEvent is! MapEventMove && mapEvent is! MapEventRotate) {
-      // do not flood console with move and rotate events
-      //debugPrint(_eventName(mapEvent));
-    }
-
-    //setState(() {});
-  }
-
-  Future<LatLng> _getLocation() async {
-    final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (serviceEnabled) {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
-          final Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-          return LatLng(position.latitude, position.longitude);
-        }
-      } else {
-        final Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-        return LatLng(position.latitude, position.longitude);
-      }
-    }
-    return const LatLng(41, 29);
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> locationList = _getLocations();
     return Scaffold(
       backgroundColor: const Color(0xFF132555),
       body: FutureBuilder<UserInfo>(
@@ -251,10 +174,6 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
                               ],
                             ),
                             Positioned(
-                              top: 30,
-                              child: _getTopButtons(context),
-                            ),
-                            Positioned(
                               bottom: 30,
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width,
@@ -276,7 +195,7 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
                               bottom: 30,
                               left: 15,
                               right: 15,
-                              child: Column(children: locations.length > 0 ? _getLocations() : _getSearchButton()),
+                              child: Column(children: locations.isNotEmpty ? _getLocations() : _getSearchButton()),
                             )
                           ],
                         ),
@@ -403,64 +322,6 @@ class _InteractiveTestPageState extends State<InteractiveTestPage> with TickerPr
         ),
       );
     }).toList();
-  }
-
-  Widget _getTopButtons(BuildContext context) {
-    return Container();
-    return SizedBox(
-      width: MediaQuery.of(context).size.width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade500,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Text(
-                      '750 Metre',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      '|',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'Müsait park yeri: 20',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          /*
-          const SizedBox(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: MediaQuery.of(context).size.width / 2,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(backgroundColor: Colors.green.shade400, foregroundColor: Colors.white),
-                  child: const Text('Bu bölgede ara'),
-                ),
-              ),
-            ],
-          )*/
-        ],
-      ),
-    );
   }
 
   Future<UserInfo> _getDisplayName() async {

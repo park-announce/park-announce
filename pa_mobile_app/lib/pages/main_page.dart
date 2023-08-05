@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pa_mobile_app/external/interactive_test_page.dart';
+import 'package:pa_mobile_app/pages/map_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatelessWidget {
@@ -25,7 +25,7 @@ class MainPage extends StatelessWidget {
                       ),
                       Text(snapshot.data!.eMail, style: const TextStyle(color: Colors.white)),
                       const SizedBox(height: 20),
-                      const Expanded(child: InteractiveTestPage()),
+                      const Expanded(child: MapPage()),
                       //Text(snapshot.data!.responseBody, style: const TextStyle(color: Colors.white)),
                     ],
                   ),
