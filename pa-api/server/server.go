@@ -42,6 +42,24 @@ func NewServer(hub *service.SocketHub) *gin.Engine {
 		userHandler.HandleOAuth2GoogleRegister(ctx)
 	})
 
+	server.POST("/preregisterations", func(ctx *gin.Context) {
+		dbClient := dbClientFactory.NewDBClient()
+		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient(), repository.NewUserRepository(dbClient)))
+		userHandler.HandlePreRegister(ctx)
+	})
+
+	server.POST("/registerationverifications", func(ctx *gin.Context) {
+		dbClient := dbClientFactory.NewDBClient()
+		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient(), repository.NewUserRepository(dbClient)))
+		userHandler.HandlePreRegisterVerification(ctx)
+	})
+
+	server.POST("/registerations", func(ctx *gin.Context) {
+		dbClient := dbClientFactory.NewDBClient()
+		userHandler := handler.NewUserHandler(service.NewUserServiceWithHttpClient(client.NewRedisClientFactory("redis:6379", "").GetRedisClient(), client.NewHttpClientFactory().GetHttpClient(), repository.NewUserRepository(dbClient)))
+		userHandler.HandleRegister(ctx)
+	})
+
 	server.PUT("/corporation/locations/:id", func(ctx *gin.Context) {
 		dbClient := dbClientFactory.NewDBClient()
 		corporationHandler := handler.NewCorporationHandler(service.NewCorporationService(repository.NewCorporationRepository(dbClient)))

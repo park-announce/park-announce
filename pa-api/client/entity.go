@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -179,6 +180,8 @@ type IRedisClient interface {
 	HIncrBy(key, field string, incr int64) (int64, error)
 	HGet(key, field string) (string, error)
 	HSet(key, field string, value interface{}) (bool, error)
+	Set(key string, value interface{}, expiration time.Duration) (string, error)
+	Get(key string) (string, error)
 }
 
 type RedisClient struct {
@@ -254,6 +257,25 @@ func (c *RedisClient) HSet(key string, field string, value interface{}) (bool, e
 	var result bool = false
 
 	result, err := c.client.HSet(key, field, value).Result()
+
+	return result, err
+}
+
+func (c *RedisClient) Get(key string) (string, error) {
+	var result string = ""
+	result, err := c.client.Get(key).Result()
+
+	if err == redis.Nil {
+		return result, nil
+	}
+
+	return result, err
+}
+
+func (c *RedisClient) Set(key string, value interface{}, expiration time.Duration) (string, error) {
+	var result string = ""
+
+	result, err := c.client.Set(key, value, expiration).Result()
 
 	return result, err
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/park-announce/pa-api/contract"
 	"github.com/park-announce/pa-api/entity"
@@ -105,6 +106,8 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 		return []byte(key), nil
 	})
 
+	//TODO:token'in expire olup olmadigi kontrol edilecek.
+
 	if user.Audience != clientIds[clientType] {
 		return nil, types.NewBusinessException("google oauth2 aud exception", "exp.google.oauth2.aud")
 	}
@@ -120,6 +123,8 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 	if dbUser == nil {
 		return nil, types.NewBusinessException("user not found exception", "exp.user.notfound")
 	}
+
+	//TODO:status alani kontrol edilecek, yasakli kullanici ise hata verilecek.
 
 	userId := dbUser.(*entity.User).Id
 
@@ -208,4 +213,84 @@ func (service *UserService) GetGoogleOAuthRegisterResponse(idToken string, clien
 	tokenData := &entity.Token{AccessToken: tokenstring}
 
 	return tokenData, err
+}
+
+func (service *UserService) SendOtp(email string) (string, error) {
+
+	//TODO:generate authorizatin code and write it to redis and send as mail
+	authorizationCode := 1234
+
+	guid := util.GenerateGuid()
+	_, err := service.redisClient.Set(fmt.Sprintf("preregister-mail|%s", guid), email, time.Minute*15)
+
+	if err != nil {
+		return "", types.NewBusinessException("register with mail", "exp.redis.otp.error")
+	}
+
+	_, err = service.redisClient.Set(fmt.Sprintf("preregister-otp|%s", guid), authorizationCode, time.Minute*3)
+
+	if err != nil {
+		return "", types.NewBusinessException("register with mail", "exp.redis.otp.error")
+	}
+
+	return guid, nil
+
+}
+
+func (service *UserService) ValidateOtp(guid string, email string, otp string) error {
+
+	sendedMail, err := service.redisClient.Get(fmt.Sprintf("preregister-mail|%s", guid))
+
+	if err != nil {
+		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
+	}
+
+	if sendedMail != email {
+		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
+	}
+
+	sendOtp, err := service.redisClient.Get(fmt.Sprintf("preregister-otp|%s", guid))
+
+	if sendOtp != otp {
+		return types.NewBusinessException("invalid authorization code", "exp.register.invalid_otp")
+	}
+
+	return nil
+
+}
+
+func (service *UserService) Register(guid, email, firstName, lastName, mobilePhone, password string, city int16) error {
+
+	sendedMail, err := service.redisClient.Get(fmt.Sprintf("preregister-mail|%s", guid))
+
+	if err != nil {
+		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
+	}
+
+	if sendedMail != email {
+		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
+	}
+
+	userId := util.GenerateGuid()
+	//TODO :check is there any existing record with this email
+	_, err = service.userRepository.Insert("insert into  pa_users (id,email,first_name,last_name,status,mobile_phone,city_code) values($1,$2,$3,$4,$5,$6,$7);", userId, email, firstName, lastName, 1, mobilePhone, city)
+
+	if err != nil {
+		return types.NewBusinessException("db exception", "exp.db.query.error")
+	}
+
+	hashedPassword, err := util.GeneratePasswordHash(password)
+
+	if err != nil {
+		return types.NewBusinessException("db exception", "exp.db.query.error")
+	}
+
+	_, err = service.userRepository.Insert("insert into  pa_user_passwords (id,user_id,password) values($1,$2,$3);", util.GenerateGuid(), userId, hashedPassword)
+
+	if err != nil {
+		return types.NewBusinessException("db exception", "exp.db.query.error")
+	}
+
+	return nil
+
 }
