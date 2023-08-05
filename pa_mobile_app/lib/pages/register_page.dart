@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pa_mobile_app/components/pa_button.dart';
 import 'package:pa_mobile_app/components/pa_text_field.dart';
 import 'package:pa_mobile_app/pages/map_page.dart';
 import 'package:pa_mobile_app/utils/navigation_utils.dart' as nav_utils;
@@ -72,6 +73,7 @@ class _RegisterPageState extends State<RegisterPage> {
               isPassword: true,
             ),
             const SizedBox(height: 20),
+            PaButton(text: 'Register', onPressedFunction: () {}),
             MaterialButton(
               padding: EdgeInsets.zero,
               textColor: Colors.white,
@@ -85,10 +87,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     border: Border.all(width: 1, color: Colors.grey),
-                    color: Theme.of(context).primaryColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const Text('Register')),
+                  child: Text('Register', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.primary))),
             )
           ],
         ),

@@ -62,9 +62,9 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Container(
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).backgroundColor),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).colorScheme.secondary),
                           child: MaterialButton(
-                            child: Text('Get Started', style: Theme.of(context).textTheme.bodyMedium!),
+                            child: Text('Get Started', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.primary)),
                             onPressed: () {
                               showLoginMenu();
                             },

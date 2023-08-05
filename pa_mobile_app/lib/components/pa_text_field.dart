@@ -44,6 +44,7 @@ class _PaTextFieldState extends State<PaTextField> {
       controller: widget.controller,
       obscureText: widget.isPassword && _hidePassword,
       autocorrect: false,
+      cursorColor: Theme.of(context).colorScheme.secondary,
       decoration: InputDecoration(
         suffixIcon: widget.isPassword
             ? IconButton(
@@ -60,22 +61,22 @@ class _PaTextFieldState extends State<PaTextField> {
             : null,
         focusedBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(Radius.circular(30)),
-          borderSide: BorderSide(width: 1, color: Theme.of(context).primaryColor),
+          borderSide: BorderSide(width: 1, color: Colors.grey),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(Radius.circular(30)),
-          borderSide: BorderSide(width: 1, color: Theme.of(context).primaryColor),
+          borderSide: BorderSide(width: 1, color: Colors.grey),
         ),
         contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
         hintText: widget.hintText,
         hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).hintColor),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(width: 1, color: Colors.red),
+          borderSide: const BorderSide(width: 1, color: Colors.grey),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(width: 0.5, color: Colors.white),
+          borderSide: BorderSide(width: 0.5, color: Colors.grey),
         ),
       ),
     );

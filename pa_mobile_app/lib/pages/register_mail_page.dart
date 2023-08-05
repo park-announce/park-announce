@@ -1,5 +1,6 @@
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
+import 'package:pa_mobile_app/components/pa_button.dart';
 import 'package:pa_mobile_app/components/pa_pin_input.dart';
 import 'package:pa_mobile_app/components/pa_text_field.dart';
 import 'package:pa_mobile_app/pages/register_page.dart';
@@ -125,21 +126,11 @@ class _RegisterMailPageState extends State<RegisterMailPage> {
         _checkOtp(_pinController.text, context);
       };
     }
-    return MaterialButton(
-      padding: EdgeInsets.zero,
-      textColor: Colors.black,
-      onPressed: onPressed,
-      child: Container(
-          height: 40,
-          //padding: const EdgeInsets.symmetric(horizontal: 30),
-          width: double.infinity,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border.all(width: 1, color: Colors.grey),
-            color: decorationColor,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Text(buttonText)),
+    return PaButton(
+      text: buttonText,
+      onPressedFunction: () {
+        onPressed();
+      },
     );
   }
 }
@@ -152,7 +143,7 @@ Future<bool> _sendOtp() async {
 
 Future<bool> _checkOtp(String value, BuildContext context) async {
   if (value != '123456') {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid Otp')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invalid Otp', style: Theme.of(context).textTheme.bodyMedium)));
     return false;
   }
   print(value);
