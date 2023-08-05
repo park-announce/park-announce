@@ -124,13 +124,30 @@ CREATE TABLE public.pa_locations (
 ALTER TABLE public.pa_locations OWNER TO park_announce;
 
 --
+-- Name: pa_user_passwords; Type: TABLE; Schema: public; Owner: park_announce
+--
+
+CREATE TABLE public.pa_user_passwords (
+    id character varying(50) NOT NULL,
+    user_id character varying(50) NOT NULL,
+    password character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.pa_user_passwords OWNER TO park_announce;
+
+--
 -- Name: pa_users; Type: TABLE; Schema: public; Owner: park_announce
 --
 
 CREATE TABLE public.pa_users (
     id character varying(50) NOT NULL,
     email character varying(200) NOT NULL,
-    password character varying(10)
+    first_name character varying(100) NOT NULL,
+    last_name character varying(100) NOT NULL,
+    status smallint DEFAULT 0 NOT NULL,
+    mobile_phone character varying(20) NOT NULL,
+    city_code smallint NOT NULL
 );
 
 
@@ -159,6 +176,8 @@ COPY public.pa_corporation_prices (id, corporation_location_id, price, currency,
 --
 
 COPY public.pa_corporation_roles (id, name) FROM stdin;
+0d811a85-c53b-4d5e-9c61-97d9607259e1	admin
+2b2a8cc3-471f-44cd-ac46-fd595c091c60	user
 \.
 
 
@@ -167,6 +186,8 @@ COPY public.pa_corporation_roles (id, name) FROM stdin;
 --
 
 COPY public.pa_corporation_users (id, status, email, password, corporation_id, role_id) FROM stdin;
+932b7062-6435-4be1-83d1-b37f9d3f0333	1	resulguldibi@gmail.com	$2a$10$E8rQ34gcb/80PT.c1o.WXu22AEcf7BPTqHBsWWfmi1dw9bjNleSAu	932b7062-6435-4be1-83d1-b37f9d3f0448	0d811a85-c53b-4d5e-9c61-97d9607259e1
+09bcbb19-1915-446f-858e-2e357cd31e58	1	fatihberksoz@gmail.com	$2a$10$zmpuE3xTwNoLwvPBmf2yQuVPt8GOrekioqaPolEFE5aHEccRPayG6	932b7062-6435-4be1-83d1-b37f9d3f0448	2b2a8cc3-471f-44cd-ac46-fd595c091c60
 \.
 
 
@@ -190,11 +211,21 @@ d2c7a5d9-8ae2-4cc7-a14a-4075b308f505	0101000020E61000004C58BBAC7E033D40A06EE384E
 
 
 --
+-- Data for Name: pa_user_passwords; Type: TABLE DATA; Schema: public; Owner: park_announce
+--
+
+COPY public.pa_user_passwords (id, user_id, password) FROM stdin;
+7779a639-61c9-4645-b5ec-e55005d2a4f9	3472ec31-f624-46c5-a4ce-02604680da52	$2a$10$q9.0Fazp0qNFMbNMQr4ZZOyTrqYG63WZPiX0Hh3cZpp20ea6HwTO6
+\.
+
+
+--
 -- Data for Name: pa_users; Type: TABLE DATA; Schema: public; Owner: park_announce
 --
 
-COPY public.pa_users (id, email, password) FROM stdin;
-932b7062-6435-4be1-83d1-b37f9d3f0448	resulguldibi@gmail.com	\N
+COPY public.pa_users (id, email, first_name, last_name, status, mobile_phone, city_code) FROM stdin;
+f6d89519-fd2d-4b29-be94-8559b725c84b	2@gmail.com	kamil	tayyare	1	905542891616	34
+3472ec31-f624-46c5-a4ce-02604680da52	2@gmail.com	kamil	tayyare	1	905542891616	34
 \.
 
 
@@ -271,6 +302,14 @@ ALTER TABLE ONLY public.pa_locations
 
 
 --
+-- Name: pa_user_passwords pa_user_passwords_pkey; Type: CONSTRAINT; Schema: public; Owner: park_announce
+--
+
+ALTER TABLE ONLY public.pa_user_passwords
+    ADD CONSTRAINT pa_user_passwords_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: pa_users pa_users_pkey; Type: CONSTRAINT; Schema: public; Owner: park_announce
 --
 
@@ -315,6 +354,14 @@ ALTER TABLE ONLY public.pa_corporation_users
 
 ALTER TABLE ONLY public.pa_corporation_users
     ADD CONSTRAINT pa_corporation_users_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.pa_corporation_roles(id) NOT VALID;
+
+
+--
+-- Name: pa_user_passwords pa_user_passwords_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: park_announce
+--
+
+ALTER TABLE ONLY public.pa_user_passwords
+    ADD CONSTRAINT pa_user_passwords_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.pa_users(id);
 
 
 --
