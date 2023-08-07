@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:pa_mobile_app/components/pa_button.dart';
@@ -16,13 +18,13 @@ class RegisterMailPage extends StatefulWidget {
 class _RegisterMailPageState extends State<RegisterMailPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
-
   final int kPinLength = 6;
   bool focusPin = false;
   PageStateStatus _pageStateStatus = PageStateStatus.initial;
   late String email;
   late String pin;
-
+  late int remainingTime = 0;
+  late Timer remainingTimer;
   @override
   void initState() {
     _emailController.addListener(() {
@@ -39,10 +41,22 @@ class _RegisterMailPageState extends State<RegisterMailPage> {
   }
 
   @override
+  void dispose() {
+    remainingTimer.cancel();
+    _emailController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: const Text(
+          'Sign Up',
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -55,32 +69,52 @@ class _RegisterMailPageState extends State<RegisterMailPage> {
                   enabled: _pageStateStatus == PageStateStatus.initial,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  focus: true,
                 ),
                 ConstrainedBox(
                   constraints: BoxConstraints.tightForFinite(height: _pageStateStatus == PageStateStatus.initial ? 0 : double.infinity),
                   child: Column(
                     children: [
                       const SizedBox(height: 30),
-                      PaPinInput(
-                        _pageStateStatus == PageStateStatus.otpSent,
-                        _pinController,
-                        kPinLength,
-                        keyboardType: TextInputType.number,
-                        changed: (String value) {
-                          _pinController.text = value.toString();
-                          setState(() {});
-                        },
-                        completed: (String value) {
-                          _checkOtp(value.toString(), context).then((result) {
-                            if (result) {
-                              nav_utils.navigate(context, RegisterPage(email: _emailController.text, firstName: '', lastName: ''), onReturn: () {
-                                _pinController.text = "";
-                                _pageStateStatus = PageStateStatus.initial;
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 100,
+                            width: 100,
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  width: 3,
+                                  color: Theme.of(context).colorScheme.primary,
+                                )),
+                            child: Center(child: Text(remainingTime.toString(), style: TextStyle(fontSize: 30))),
+                          ),
+                          SizedBox(height: 30),
+                          PaPinInput(
+                            _pageStateStatus == PageStateStatus.otpSent,
+                            _pinController,
+                            kPinLength,
+                            keyboardType: TextInputType.number,
+                            changed: (String value) {
+                              _pinController.text = value.toString();
+                              setState(() {});
+                            },
+                            completed: (String value) {
+                              _checkOtp(value.toString(), context).then((result) {
+                                if (result) {
+                                  nav_utils.navigate(context, RegisterPage(email: _emailController.text, firstName: '', lastName: ''), onReturn: () {
+                                    _pinController.text = "";
+                                    _pageStateStatus = PageStateStatus.initial;
+                                  });
+                                }
                               });
-                            }
-                          });
-                        },
-                        requestFocus: focusPin,
+                            },
+                            requestFocus: focusPin,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -106,17 +140,40 @@ class _RegisterMailPageState extends State<RegisterMailPage> {
     } else if (_pageStateStatus == PageStateStatus.otpSent) {
       isEnabled = _pinController.value.text.isNotEmpty && _pinController.value.text.length == kPinLength;
       buttonText = 'Check Otp';
+    } else if (_pageStateStatus == PageStateStatus.otpTimedOut) {
+      isEnabled = _pinController.value.text.isNotEmpty && _pinController.value.text.length == kPinLength;
+      buttonText = 'ReSend Otp';
     }
 
-    final Color decorationColor = isEnabled ? Theme.of(context).primaryColor : Colors.grey;
-
     VoidCallback onPressed = () {};
-    if (_pageStateStatus == PageStateStatus.initial) {
+    if (_pageStateStatus == PageStateStatus.otpTimedOut) {
       onPressed = () async {
         final bool sendOtpResult = await _sendOtp();
         if (sendOtpResult) {
           setState(() {
             focusPin = true;
+            remainingTime = 15;
+            _pageStateStatus = PageStateStatus.otpSent;
+          });
+        }
+      };
+    } else if (_pageStateStatus == PageStateStatus.initial) {
+      onPressed = () async {
+        final bool sendOtpResult = await _sendOtp();
+        if (sendOtpResult) {
+          remainingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+            setState(() {
+              if (remainingTime > 0) {
+                remainingTime = remainingTime - 1;
+              } else {
+                _pageStateStatus = PageStateStatus.otpTimedOut;
+              }
+            });
+          });
+
+          setState(() {
+            focusPin = true;
+            remainingTime = 15;
             _pageStateStatus = PageStateStatus.otpSent;
           });
         }
@@ -133,19 +190,19 @@ class _RegisterMailPageState extends State<RegisterMailPage> {
       },
     );
   }
-}
 
-enum PageStateStatus { initial, otpSent }
-
-Future<bool> _sendOtp() async {
-  return true;
-}
-
-Future<bool> _checkOtp(String value, BuildContext context) async {
-  if (value != '123456') {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invalid Otp', style: Theme.of(context).textTheme.bodyMedium)));
-    return false;
+  Future<bool> _sendOtp() async {
+    return true;
   }
-  print(value);
-  return true;
+
+  Future<bool> _checkOtp(String value, BuildContext context) async {
+    if (value != '123456') {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invalid Otp', style: Theme.of(context).textTheme.bodyMedium)));
+      return false;
+    }
+    print(value);
+    return true;
+  }
 }
+
+enum PageStateStatus { initial, otpSent, otpTimedOut }

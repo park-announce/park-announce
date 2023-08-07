@@ -13,22 +13,11 @@ class PaButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialButton(
-      padding: EdgeInsets.zero,
+    return ElevatedButton(
       onPressed: () {
         onPressedFunction();
       },
-      child: Container(
-          height: 40,
-          //padding: const EdgeInsets.symmetric(horizontal: 30),
-          width: double.infinity,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border.all(width: 1, color: Colors.grey),
-            color: Theme.of(context).colorScheme.secondary,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Text(text, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.primary))),
+      child: Text(text, style: Theme.of(context).textTheme.labelLarge),
     );
   }
 }

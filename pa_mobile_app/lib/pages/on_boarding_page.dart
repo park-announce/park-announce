@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:pa_mobile_app/components/pa_button.dart';
 import 'package:pa_mobile_app/components/pa_login_button.dart';
 import 'package:pa_mobile_app/models/api_error_response.dart';
 import 'package:pa_mobile_app/models/check_api_token_response.dart';
@@ -46,35 +47,32 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(
-        height: double.infinity,
-        width: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Stack(children: [
-            Positioned(
-                bottom: 0,
-                right: 0,
-                left: 0,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Container(
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).colorScheme.secondary),
-                          child: MaterialButton(
-                            child: Text('Get Started', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.primary)),
-                            onPressed: () {
-                              showLoginMenu();
-                            },
-                          ),
+      body: Padding(
+        padding: EdgeInsets.all(20),
+        child: SizedBox(
+          height: double.infinity,
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Stack(children: [
+              Positioned(
+                  bottom: 0,
+                  right: 0,
+                  left: 0,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: PaButton(
+                          text: 'Get Started',
+                          onPressedFunction: () {
+                            showLoginMenu();
+                          },
                         ),
                       ),
-                    ),
-                  ],
-                ))
-          ]),
+                    ],
+                  ))
+            ]),
+          ),
         ),
       ),
     );
@@ -90,7 +88,6 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
               ),
-              padding: const EdgeInsets.only(bottom: 20, top: 10),
               width: double.infinity,
               child: Padding(
                 padding: const EdgeInsets.all(18),
@@ -109,17 +106,14 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                     ),
                     Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           child: Divider(
                             color: Colors.grey,
                             height: 10,
                           ),
                         ),
-                        Text(
-                          'Or',
-                          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).backgroundColor),
-                        ),
-                        Expanded(
+                        Text('Or', style: Theme.of(context).textTheme.bodySmall),
+                        const Expanded(
                           child: Divider(
                             color: Colors.grey,
                             height: 10,
@@ -128,12 +122,14 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                       ],
                     ),
                     PaLoginButton(
-                        onPressedFunction: () {
-                          _googleSignIn.signIn().then((value) {
-                            _handleGoogleAccount(value!);
-                          });
-                        },
-                        text: 'Continue With Google')
+                      onPressedFunction: () {
+                        _googleSignIn.signIn().then((value) {
+                          _handleGoogleAccount(value!);
+                        });
+                      },
+                      text: 'Continue With Google',
+                      icon: FaIcon(FontAwesomeIcons.google),
+                    )
                   ],
                 ),
               ),
