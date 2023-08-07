@@ -1,4 +1,4 @@
-package com.example.pa_mobile_app
+package com.parkannounce.mobile.dev
 
 import io.flutter.embedding.android.FlutterActivity
 

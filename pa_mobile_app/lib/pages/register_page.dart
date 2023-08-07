@@ -75,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
               isPassword: true,
             ),
             const SizedBox(height: 20),
-            PaButton(text: 'Register', onPressedFunction: () {}),
+            Container(width: double.infinity, child: PaButton(text: 'Register', onPressedFunction: () {})),
           ],
         ),
       ),

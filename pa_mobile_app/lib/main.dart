@@ -41,41 +41,46 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'flutter_map Demo',
-      theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(foregroundColor: Colors.white, backgroundColor: Colors.black),
-        primaryColor: Colors.white,
-        brightness: Brightness.light,
-        useMaterial3: true,
-        colorScheme: const ColorScheme(
+    return SafeArea(
+      child: MediaQuery(
+        data: const MediaQueryData(textScaleFactor: 1),
+        child: MaterialApp(
+          title: 'flutter_map Demo',
+          theme: ThemeData(
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: const AppBarTheme(foregroundColor: Colors.white, backgroundColor: Colors.black),
+            primaryColor: Colors.white,
             brightness: Brightness.light,
-            primary: Colors.black,
-            onPrimary: Colors.black,
-            secondary: Colors.white,
-            onSecondary: Colors.white,
-            error: Colors.red,
-            onError: Colors.red,
-            background: Colors.black,
-            onBackground: Colors.black,
-            surface: Colors.grey,
-            onSurface: Colors.grey),
-        textTheme: TextTheme(
-          labelMedium: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
-          labelLarge: GoogleFonts.poppins(color: Colors.white, fontSize: 15),
-          bodySmall: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
-          bodyMedium: GoogleFonts.poppins(color: Colors.black, fontSize: 15),
-        ),
-        elevatedButtonTheme: const ElevatedButtonThemeData(
-          style: ButtonStyle(
-            foregroundColor: MaterialStatePropertyAll(Colors.white),
-            backgroundColor: MaterialStatePropertyAll(Colors.black),
-            padding: MaterialStatePropertyAll(EdgeInsets.all(8)),
+            useMaterial3: true,
+            colorScheme: const ColorScheme(
+                brightness: Brightness.light,
+                primary: Colors.black,
+                onPrimary: Colors.black,
+                secondary: Colors.white,
+                onSecondary: Colors.white,
+                error: Colors.red,
+                onError: Colors.red,
+                background: Colors.black,
+                onBackground: Colors.black,
+                surface: Colors.grey,
+                onSurface: Colors.grey),
+            textTheme: TextTheme(
+              labelMedium: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+              labelLarge: GoogleFonts.poppins(color: Colors.white, fontSize: 15),
+              bodySmall: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
+              bodyMedium: GoogleFonts.poppins(color: Colors.black, fontSize: 15),
+            ),
+            elevatedButtonTheme: const ElevatedButtonThemeData(
+              style: ButtonStyle(
+                foregroundColor: MaterialStatePropertyAll(Colors.white),
+                backgroundColor: MaterialStatePropertyAll(Colors.black),
+                padding: MaterialStatePropertyAll(EdgeInsets.all(8)),
+              ),
+            ),
           ),
+          home: const OnBoardingPage(),
         ),
       ),
-      home: const OnBoardingPage(),
     );
   }
 }

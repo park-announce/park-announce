@@ -128,7 +128,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                         });
                       },
                       text: 'Continue With Google',
-                      icon: FaIcon(FontAwesomeIcons.google),
+                      icon: const FaIcon(FontAwesomeIcons.google),
                     )
                   ],
                 ),

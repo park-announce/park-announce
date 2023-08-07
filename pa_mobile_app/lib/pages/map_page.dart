@@ -12,6 +12,7 @@ import 'package:pa_mobile_app/external/tile_layer.dart';
 import 'package:pa_mobile_app/external/widget.dart';
 import 'package:pa_mobile_app/models/socket_request_models.dart';
 import 'package:pa_mobile_app/models/socket_response_models.dart';
+import 'package:pa_mobile_app/service.dart';
 import 'package:pa_mobile_app/utils/location_utils.dart' as location_utils;
 import 'package:pa_mobile_app/utils/map_utils.dart' as map_utils;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -49,7 +50,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       SharedPreferences.getInstance().then((value) {
-        _channel = WebSocketChannel.connect(Uri.parse('ws://192.168.0.17:8001/socket/connect?Authorization=${value.getString('Token')}'));
+        _channel = WebSocketChannel.connect(Uri.parse('ws://${kBaseUri}/socket/connect?Authorization=${value.getString('Token')}'));
         _channel.stream.listen((event) {
           _processWebSocketMessage(event);
         });
