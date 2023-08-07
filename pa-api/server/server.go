@@ -20,7 +20,7 @@ func NewServer(hub *service.SocketHub) *gin.Engine {
 	AddDefaultMiddlewaresToEngine(server)
 
 	server.GET("/socket/connect", func(ctx *gin.Context) {
-		socketHandler := handler.NewSocketHandler(service.NewSocketService())
+		socketHandler := handler.NewSocketHandler(service.NewSocketService(client.NewRedisClientFactory("redis:6379", "").GetRedisClient()))
 		socketHandler.HandleSocketConnection(ctx, hub)
 	})
 

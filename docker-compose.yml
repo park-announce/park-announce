@@ -22,6 +22,10 @@ services:
       - db
       - kafka    
       - redis  
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}      
   web:
     container_name: web
     image: park-announce/pa-web

@@ -91,6 +91,11 @@ func GetGoogleIdTokenSignKey(httpClient client.IHttpClient, idToken string) (str
 
 	googleOpenIDOAuthCertKey, err = GetGoogleOpenIDOAuthCertKey(httpClient, googleJWTHeader)
 
+	if err != nil {
+		log.Println("error :", err)
+		return "", err
+	}
+
 	if googleOpenIDOAuthCertKey == nil {
 		return "", types.NewBusinessException("google idtoken sign key exception", "exp.google.id.token.sign.key")
 	}
@@ -147,14 +152,22 @@ func GetGoogleOpenIDOAuthCertKey(httpClient client.IHttpClient, jwtHeader *entit
 
 func GetGoogleOpenIDOAuthCerts(httpClient client.IHttpClient) (*entity.GoogleOpenIDOAuthCertResponse, error) {
 	conf, err := GetGoogleOpenIDConfiguration(httpClient)
+	if err != nil {
+		log.Println("error :", err)
+		return nil, err
+	}
 	certResponse := &entity.GoogleOpenIDOAuthCertResponse{}
 	err = httpClient.Get(conf.JwksUri).EndStruct(certResponse)
+	if err != nil {
+		log.Println("error :", err)
+		return nil, err
+	}
 	return certResponse, err
 }
 
 func FindGoogleOpenIDOAuthCertKey(certList []*entity.GoogleOpenIDOAuthCertKey, jwtHeader *entity.GoogleJWTHeader) *entity.GoogleOpenIDOAuthCertKey {
 	var foundCert *entity.GoogleOpenIDOAuthCertKey
-	if certList != nil && len(certList) > 0 {
+	if len(certList) > 0 {
 		for _, cert := range certList {
 			if cert.Alg == jwtHeader.Alg && cert.Kid == jwtHeader.KID {
 				foundCert = cert

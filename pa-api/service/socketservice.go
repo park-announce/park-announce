@@ -69,6 +69,19 @@ func (s *SocketService) CreateSocketConnection(ctx *gin.Context, user entity.Use
 			continue
 		}
 
+		//check is any transaction exist in redis with the same transaction id for this operation and this client id
+		transactionUniqueKey := fmt.Sprintf("transaction|%s|%s|%s", user.Id, socketMessage.Operation, socketMessage.TransactionId)
+		isNewTransactionCanBeStarted, err := s.redisClient.SetNX(transactionUniqueKey, 1, time.Second*5)
+		if err != nil {
+			log.Println("error :", err)
+			return
+		}
+
+		if !isNewTransactionCanBeStarted {
+			log.Printf("isNewTransactionCanBeStarted is false. client id : %s, operation name : %s, transction id : %s ", user.Id, socketMessage.Operation, socketMessage.TransactionId)
+			return
+		}
+
 		clientKafkaRequestMessage := &entity.ClientKafkaRequestMessage{
 			ClientId:        user.Id,
 			ApiId:           fmt.Sprintf("%d", global.GetInstanceId()),

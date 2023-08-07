@@ -130,7 +130,7 @@ type CreateParkLocationRequest struct {
 }
 
 type CreateParkLocationResponse struct {
-	Count  int64 `json:"count"`
+	Count int64 `json:"count"`
 }
 
 type ReserveParkLocationRequest struct {
@@ -308,7 +308,7 @@ func (o *CreateParkLocationOperation) Do(data interface{}) (error, interface{}) 
 		return err, nil
 	}
 
-	return err, &CreateParkLocationResponse{Count : count}
+	return err, &CreateParkLocationResponse{Count: count}
 
 }
 
@@ -369,7 +369,7 @@ func (o *ReserveParkLocationOperation) Do(data interface{}) (error, interface{})
 		return err, nil
 	}
 
-	return err, &ReserveParkLocationResponse{Count : rowsAffected}
+	return err, &ReserveParkLocationResponse{Count: rowsAffected}
 
 }
 
@@ -505,7 +505,8 @@ func main() {
 	operations["get_reserved_park_locations"] = &GetReservedParkLocationsOperation{}
 
 	//initialize postgres client
-	connStr := "postgres://park_announce:PosgresDb1591*@db/padb?sslmode=disable"
+
+	connStr := `postgres://` + os.Getenv("POSTGRES_USER") + `:` + os.Getenv("POSTGRES_PASSWORD") + `@db/` + os.Getenv("POSTGRES_DB") + `?sslmode=disable`
 	var dbError error
 	db, dbError = sql.Open("postgres", connStr)
 	if dbError != nil {

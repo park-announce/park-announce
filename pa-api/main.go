@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,33 +9,23 @@ import (
 	"github.com/go-redis/redis"
 	_ "github.com/lib/pq"
 
-	"github.com/gorilla/websocket"
-
 	"github.com/park-announce/pa-api/background"
 	"github.com/park-announce/pa-api/service"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
-
 func main() {
 
 	httpServerQuit := make(chan os.Signal, 1)
-	signal.Notify(httpServerQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
+	signal.Notify(httpServerQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
 	redisLockQuit := make(chan os.Signal, 1)
-	signal.Notify(redisLockQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
+	signal.Notify(redisLockQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
 	redisHeartBeatQuit := make(chan os.Signal, 1)
-	signal.Notify(redisHeartBeatQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
+	signal.Notify(redisHeartBeatQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
 	kafkaConsumerQuit := make(chan os.Signal, 1)
-	signal.Notify(kafkaConsumerQuit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, os.Interrupt)
+	signal.Notify(kafkaConsumerQuit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
 	redisLockObtained := make(chan bool)
 	redisLockName := make(chan string)
@@ -70,10 +59,10 @@ func main() {
 
 	//consume message from client_response_{{instanceId}} topic and try to send message to related socket client
 	//if there is no socket connection, sends this message to dead_letter_message topic
-	go background.ConsumeClientResponse(wgMain, hub, kafkaConsumerQuit)
+	go background.ConsumeClientResponse(wgMain, rdb, hub, kafkaConsumerQuit)
 
 	//consume message from dead_letter_messages topic and try to send message to related socket client
-	go background.ConsumeDeadLetterMessages(wgMain, hub, kafkaConsumerQuit)
+	go background.ConsumeDeadLetterMessages(wgMain, rdb, hub, kafkaConsumerQuit)
 
 	wgMain.Wait()
 }

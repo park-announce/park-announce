@@ -60,6 +60,7 @@ func (service *CorporationService) UpdateCorporationLocation(user entity.User, i
 	}
 
 	if corporationUserFromDb == nil {
+		log.Printf("corporationUserFromDb is nil. id : %s, corporation_id : %s", user.Id, corporationId)
 		return types.NewBusinessException("user not found exception", "exp.user.notfound")
 	}
 
@@ -72,12 +73,14 @@ func (service *CorporationService) UpdateCorporationLocation(user entity.User, i
 	}
 
 	if corporationRoleFromDb == nil {
+		log.Printf("corporationRoleFromDb is nil. role id : %s", corporationUser.RoleId)
 		return types.NewBusinessException("user not found exception", "exp.userrole.notfound")
 	}
 
 	corporationUserRole := corporationRoleFromDb.(*entity.CorporationUserRole)
 
 	if corporationUserRole.Name != "admin" {
+		log.Printf("corporationUserRole.Name is not admin. role id : %s", corporationUser.RoleId)
 		return types.NewBusinessException("user not found exception", "exp.userrole.invalid")
 	}
 
@@ -94,6 +97,7 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 	}
 
 	if corporationUserFromDb == nil {
+		log.Printf("corporationUserFromDb is nil. id : %s, corpotation_id : %s", user.Id, corporationId)
 		return types.NewBusinessException("user not found exception", "exp.user.notfound")
 	}
 
@@ -106,12 +110,14 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 	}
 
 	if corporationRoleFromDb == nil {
+		log.Printf("corporationRoleFromDb is nil. role id : %s", corporationUser.RoleId)
 		return types.NewBusinessException("user not found exception", "exp.userrole.notfound")
 	}
 
 	corporationUserRole := corporationRoleFromDb.(*entity.CorporationUserRole)
 
 	if corporationUserRole.Name != "admin" {
+		log.Printf("corporationUserRole.Name is not admin. role id : %s", corporationUser.RoleId)
 		return types.NewBusinessException("user not found exception", "exp.userrole.invalid")
 	}
 
@@ -123,6 +129,7 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 	}
 
 	if corporationUserFromDb != nil {
+		log.Printf("corporationUserFromDb.Name is not nil. email : %s", email)
 		return types.NewBusinessException("user already exist exception", "exp.user.already_exist")
 	}
 
@@ -141,13 +148,15 @@ func (service *CorporationService) InsertCorporationUser(user entity.User, email
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
-	corporationRoleFromDb, err = service.corporationRepository.QueryX("CorporationUserRole", "select * from pa_corporation_roles where name = $1;", "user")
+	roleName := "user"
+	corporationRoleFromDb, err = service.corporationRepository.QueryX("CorporationUserRole", "select * from pa_corporation_roles where name = $1;", roleName)
 	if err != nil {
 		log.Println("error :", err)
 		return types.NewBusinessException("db exception", "exp.db.query.error")
 	}
 
 	if corporationRoleFromDb == nil {
+		log.Printf("corporationRoleFromDb is nil. role name : %s", roleName)
 		return types.NewBusinessException("user not found exception", "exp.userrole.notfound")
 	}
 

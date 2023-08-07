@@ -6,6 +6,7 @@ import (
 )
 
 type SocketService struct {
+	redisClient client.IRedisClient
 }
 
 type UserService struct {
@@ -18,8 +19,8 @@ type CorporationService struct {
 	corporationRepository repository.CorporationRepository
 }
 
-func NewSocketService() SocketService {
-	return SocketService{}
+func NewSocketService(redisClient client.IRedisClient) SocketService {
+	return SocketService{redisClient: redisClient}
 }
 
 func NewUserServiceWithHttpClient(redisClient client.IRedisClient, httpClient client.IHttpClient, userRepository repository.UserRepository) UserService {

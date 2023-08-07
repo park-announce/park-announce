@@ -61,7 +61,7 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 	}
 
 	//check is user registered
-	dbUser, err := service.userRepository.QueryX("User", "select id from pa_users where email = $1", googleUser.Email)
+	dbUser, err := service.userRepository.QueryX("User", "select id,status from pa_users where email = $1", googleUser.Email)
 
 	if err != nil {
 		log.Println("error :", err)
@@ -69,6 +69,7 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 	}
 
 	if dbUser == nil {
+		log.Printf("dbUser is nil. email : %s", googleUser.Email)
 		return nil, types.NewBusinessException("user not found exception", "exp.user.notfound")
 	}
 
@@ -76,6 +77,7 @@ func (service *UserService) GetGoogleOAuthTokenResponse(idToken string, clientTy
 
 	//check user status
 	if user.Status != int16(Active) {
+		log.Printf("user.Status != int16(Active). email : %s, status : %d", googleUser.Email, user.Status)
 		return nil, types.NewBusinessException("user not found exception", "exp.user.notfound")
 	}
 
@@ -126,6 +128,7 @@ func (service *UserService) GetGuidForGoogleRegistration(idToken string, clientT
 	})
 
 	if user.Audience != clientIds[clientType] {
+		log.Printf("user.Audience != clientIds[clientType]. user.Audience : %s", user.Audience)
 		return "", types.NewBusinessException("google oauth2 aud exception", "exp.google.oauth2.aud")
 	}
 
@@ -144,6 +147,7 @@ func (service *UserService) GetGuidForGoogleRegistration(idToken string, clientT
 	}
 
 	if dbUser != nil {
+		log.Printf("dbUser != nil. mail: %s", user.Email)
 		return "", types.NewBusinessException("user not found exception", "exp.user.is_already_registered")
 	}
 
@@ -206,6 +210,7 @@ func (service *UserService) ValidateOtp(guid string, email string, otp string) e
 	}
 
 	if sendedMail != email {
+		log.Printf("sendedMail != email. sendedMail : %s, email:%s ", sendedMail, email)
 		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
 	}
 
@@ -217,6 +222,7 @@ func (service *UserService) ValidateOtp(guid string, email string, otp string) e
 	}
 
 	if sendOtp != otp {
+		log.Printf("sendOtp != otp. sendOtp : %s, otp:%s ", sendOtp, otp)
 		return types.NewBusinessException("invalid authorization code", "exp.register.invalid_otp")
 	}
 
@@ -234,6 +240,7 @@ func (service *UserService) Register(guid, email, firstName, lastName, mobilePho
 	}
 
 	if sendedMail != email {
+		log.Printf("sendedMail != email. sendedMail : %s, email:%s ", sendedMail, email)
 		return types.NewBusinessException("register with mail", "exp.redis.otp.error")
 	}
 

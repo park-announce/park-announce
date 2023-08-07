@@ -140,7 +140,7 @@ func (backgroundOperation *BackgroundOperation) StartServer(wgMain *sync.WaitGro
 
 }
 
-func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sync.WaitGroup, hub *service.SocketHub, kafkaConsumerQuit chan os.Signal) {
+func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sync.WaitGroup, redis *redis.Client, hub *service.SocketHub, kafkaConsumerQuit chan os.Signal) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
@@ -239,6 +239,14 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 					break
 				}
 				break
+			} else {
+				transactionUniqueKey := fmt.Sprintf("transaction|%s|%s|%s", clientKafkaResponseMessage.ClientId, clientSocketResponseMessage.Operation, clientSocketResponseMessage.TransactionId)
+
+				_, err := redis.Del(transactionUniqueKey).Result()
+				if err != nil {
+					log.Println("error :", err)
+					return
+				}
 			}
 
 			reader.CommitMessages(context.Background(), m)
@@ -248,10 +256,10 @@ func (backgroundOperation *BackgroundOperation) ConsumeClientResponse(wgMain *sy
 
 }
 
-func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain *sync.WaitGroup, hub *service.SocketHub, kafkaConsumerQuit chan os.Signal) {
+func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain *sync.WaitGroup, redis *redis.Client, hub *service.SocketHub, kafkaConsumerQuit chan os.Signal) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println(fmt.Sprintf("error in recover : %v, stack : %s", err, string(debug.Stack())))
+			log.Printf("error in recover : %v, stack : %s", err, string(debug.Stack()))
 		}
 	}()
 
@@ -305,7 +313,17 @@ func (backgroundOperation *BackgroundOperation) ConsumeDeadLetterMessages(wgMain
 				break
 			}
 
-			hub.SendMessageIfClientExist(clientKafkaResponseMessage.ClientId, message)
+			result := hub.SendMessageIfClientExist(clientKafkaResponseMessage.ClientId, message)
+
+			if result {
+				transactionUniqueKey := fmt.Sprintf("transaction|%s|%s|%s", clientKafkaResponseMessage.ClientId, clientSocketResponseMessage.Operation, clientSocketResponseMessage.TransactionId)
+
+				_, err := redis.Del(transactionUniqueKey).Result()
+				if err != nil {
+					log.Println("error :", err)
+					return
+				}
+			}
 
 			reader.CommitMessages(context.Background(), m)
 		}

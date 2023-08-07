@@ -191,6 +191,7 @@ type IRedisClient interface {
 	HSet(key, field string, value interface{}) (bool, error)
 	Set(key string, value interface{}, expiration time.Duration) (string, error)
 	Get(key string) (string, error)
+	SetNX(key string, value interface{}, expiration time.Duration) (bool, error)
 }
 
 type RedisClient struct {
@@ -285,6 +286,14 @@ func (c *RedisClient) Set(key string, value interface{}, expiration time.Duratio
 	var result string = ""
 
 	result, err := c.client.Set(key, value, expiration).Result()
+
+	return result, err
+}
+
+func (c *RedisClient) SetNX(key string, value interface{}, expiration time.Duration) (bool, error) {
+	var result bool = false
+
+	result, err := c.client.SetNX(key, value, expiration).Result()
 
 	return result, err
 }
